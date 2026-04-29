@@ -33,10 +33,6 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}/rviz
 )
 
-install(DIRECTORY
-  worlds/
-  DESTINATION share/${PROJECT_NAME}/worlds
-)
 
 # ============= TESTS =============
 if(BUILD_TESTING)

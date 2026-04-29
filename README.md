@@ -15,15 +15,14 @@ Package ROS 2 complet pour la simulation d'un **robot mobile autonome (AMR)** de
 
 | Élément | Dimensions | Détail |
 |---------|-----------|--------|
-| Châssis | 35 × 30 × 12 cm | Boîte rectangulaire, gris clair |
-| Plateau cargo | 30 × 25 × 1 cm | Surélevé sur 4 piliers, gris foncé |
-| 2 Roues motrices | Ø 13 cm, largeur 3 cm | Arrière, friction élevée (μ=0.9) |
-| 1 Roue folle (caster) | Ø 5 cm (sphère) | Avant, friction faible (μ=0.001) |
+| Châssis | 100 × 55 × 30 cm | Boîte rectangulaire, gris clair |
+| Plateau cargo | 120 × 70 × 5 cm | Surélevé sur 4 piliers, blanc |
+| 4 Roues motrices | Ø 25 cm, largeur 8 cm | Configuration Skid-steer (μ=0.9) |
 | LiDAR 2D | Ø 4 cm × 4 cm | 360°, portée 0.12–10 m, sur le mât |
 | IMU | 3 × 3 × 1 cm | Centre du châssis |
-| Masse totale | ~5 kg | Budget réaliste réparti |
+| Masse totale | ~62 kg | Budget réaliste pour AMR industriel |
 
-**Cinématique** : Différentielle (2 roues motrices arrière + 1 caster avant)
+**Cinématique** : Skid-steer (4 roues motrices)
 
 **Vitesses max** : 1.0 m/s linéaire, 2.0 rad/s angulaire
 
@@ -51,14 +50,11 @@ industry_robot/
 │   └── gazebo_control.xacro            # Plugins DiffDrive + JointStatePublisher
 ├── launch/
 │   ├── sim.launch.py                   # Simulation monde vide
-│   ├── sim_warehouse.launch.py         # Simulation monde entrepôt
 │   └── display.launch.py              # Visualisation URDF seule (RViz)
 ├── config/
 │   └── bridge.yaml                     # Mapping topics Gazebo ↔ ROS 2
-├── rviz/
-│   └── view_robot.rviz                # Config RViz (robot, TF, LiDAR, odom)
-└── worlds/
-    └── warehouse.sdf                   # Monde entrepôt avec obstacles
+└── rviz/
+    └── view_robot.rviz                # Config RViz (robot, TF, LiDAR, odom)
 ```
 
 ---
@@ -81,7 +77,28 @@ Suivre la [documentation officielle ROS 2 Jazzy](https://docs.ros.org/en/jazzy/I
 
 ### 2. Installer Gazebo Harmonic
 
-Suivre la [documentation officielle Gazebo](https://gazebosim.org/docs/harmonic/install_ubuntu/).
+Suivre la procédure officielle : **[Install Gazebo Harmonic on Ubuntu](https://gazebosim.org/docs/harmonic/install_ubuntu/)**
+
+```bash
+sudo apt-get update
+sudo apt-get install curl lsb-release gnupg
+
+sudo curl https://packages.osrfoundation.org/gazebo.gpg \
+  --output /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] \
+  http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" \
+  | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null
+
+sudo apt-get update
+sudo apt-get install gz-harmonic
+```
+
+> ⚠️ **Important** : Définir la variable d'environnement pour forcer la version Harmonic :
+> ```bash
+> echo 'export GZ_VERSION=harmonic' >> ~/.bashrc
+> source ~/.bashrc
+> ```
 
 ### 3. Installer les dépendances ROS-Gazebo
 
@@ -135,21 +152,13 @@ ros2 launch industry_robot display.launch.py
 
 Ouvre **RViz** avec un slider GUI pour manipuler les roues. Idéal pour vérifier le modèle 3D et l'arbre TF.
 
-### Option 2 — Simulation monde vide
+### Option 2 — Simulation dans le monde par défaut (vide)
 
 ```bash
 ros2 launch industry_robot sim.launch.py
 ```
 
 Lance **Gazebo Harmonic** (monde vide) + **RViz** + le bridge ROS-Gazebo.
-
-### Option 3 — Simulation dans l'entrepôt 🏭
-
-```bash
-ros2 launch industry_robot sim_warehouse.launch.py
-```
-
-Lance la simulation avec le monde `warehouse.sdf` contenant des murs, étagères et palettes de cartons.
 
 ---
 
@@ -213,7 +222,6 @@ odom (publié par DiffDrive)
            │    ├── cargo_platform_link
            │    │    ├── left_rail_link
            │    │    └── right_rail_link
-           │    ├── caster_wheel_link
            │    ├── front_mast_link
            │    │    ├── lidar_link
            │    │    ├── estop_link
@@ -223,8 +231,10 @@ odom (publié par DiffDrive)
            │    ├── imu_link
            │    ├── front_bumper_link
            │    └── 4× support_post_links
-           ├── left_wheel_link
-           └── right_wheel_link
+           ├── front_left_wheel_link
+           ├── front_right_wheel_link
+           ├── rear_left_wheel_link
+           └── rear_right_wheel_link
 ```
 
 ---
