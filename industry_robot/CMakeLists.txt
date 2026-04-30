@@ -33,6 +33,19 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}/rviz
 )
 
+install(DIRECTORY
+  scripts/world/
+  DESTINATION share/${PROJECT_NAME}/scripts/world/
+)
+ 
+# worlds/ est installé vide — le fichier warehouse.sdf
+# est généré au premier lancement par sim.launch.py
+install(DIRECTORY
+  worlds/
+  DESTINATION share/${PROJECT_NAME}/worlds
+)
+ 
+
 
 # ============= TESTS =============
 if(BUILD_TESTING)

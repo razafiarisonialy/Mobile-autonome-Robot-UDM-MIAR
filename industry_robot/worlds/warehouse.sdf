@@ -1,0 +1,158 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <world name="warehouse_world">
+
+    <!-- ===== Physique ===== -->
+    <physics name="1ms" type="dart">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <!-- ===== Plugins Gazebo Harmonic ===== -->
+    <plugin filename="gz-sim-physics-system"
+            name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system"
+            name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system"
+            name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system"
+            name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-contact-system"
+            name="gz::sim::systems::Contact"/>
+    <plugin filename="gz-sim-imu-system"
+            name="gz::sim::systems::Imu"/>
+
+    <!-- ===== Éclairage ===== -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.3 0.1 -0.9</direction>
+    </light>
+
+    <!-- ===== Coque de l'entrepôt (sol, murs, toit) ===== -->
+    <include>
+      <name>Warehouse_Shell</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Distribution_Warehouse</uri>
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+    </include>
+
+    <!-- Rack Shelf_R0_C0 -->
+    <include>
+      <name>Shelf_R0_C0</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
+      <static>true</static>
+      <pose>-9.75 -6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R0_C1 -->
+    <include>
+      <name>Shelf_R0_C1</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfE_01</uri>
+      <static>true</static>
+      <pose>-9.75 0.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R0_C2 -->
+    <include>
+      <name>Shelf_R0_C2</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
+      <static>true</static>
+      <pose>-9.75 6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R1_C0 -->
+    <include>
+      <name>Shelf_R1_C0</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
+      <static>true</static>
+      <pose>-3.25 -6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R1_C1 -->
+    <include>
+      <name>Shelf_R1_C1</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfE_01</uri>
+      <static>true</static>
+      <pose>-3.25 0.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R1_C2 -->
+    <include>
+      <name>Shelf_R1_C2</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
+      <static>true</static>
+      <pose>-3.25 6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R2_C0 -->
+    <include>
+      <name>Shelf_R2_C0</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
+      <static>true</static>
+      <pose>3.25 -6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R2_C1 -->
+    <include>
+      <name>Shelf_R2_C1</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfE_01</uri>
+      <static>true</static>
+      <pose>3.25 0.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R2_C2 -->
+    <include>
+      <name>Shelf_R2_C2</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
+      <static>true</static>
+      <pose>3.25 6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R3_C0 -->
+    <include>
+      <name>Shelf_R3_C0</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
+      <static>true</static>
+      <pose>9.75 -6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R3_C1 -->
+    <include>
+      <name>Shelf_R3_C1</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfE_01</uri>
+      <static>true</static>
+      <pose>9.75 0.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R3_C2 -->
+    <include>
+      <name>Shelf_R3_C2</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
+      <static>true</static>
+      <pose>9.75 6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Palette Pallet_0 -->
+    <include>
+      <name>Pallet_0</name>
+      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
+      <static>true</static>
+      <pose>-15.25 -3.0 0 0 0 0.0</pose>
+    </include>
+    <!-- Palette Pallet_1 -->
+    <include>
+      <name>Pallet_1</name>
+      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
+      <static>true</static>
+      <pose>-15.25 -0.5 0 0 0 0.0</pose>
+    </include>
+    <!-- Palette Pallet_2 -->
+    <include>
+      <name>Pallet_2</name>
+      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
+      <static>true</static>
+      <pose>-15.25 2.0 0 0 0 0.0</pose>
+    </include>
+    <!-- Palette Pallet_3 -->
+    <include>
+      <name>Pallet_3</name>
+      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
+      <static>true</static>
+      <pose>-15.25 4.5 0 0 0 0.0</pose>
+    </include>
+  </world>
+</sdf>
