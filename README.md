@@ -35,30 +35,6 @@ Package ROS 2 complet pour la simulation d'un **robot mobile autonome (AMR)** de
 
 ---
 
-## 🏗️ Structure du Package
-
-```
-industry_robot/
-├── CMakeLists.txt                      # Build system ament_cmake
-├── package.xml                         # Manifeste et dépendances
-├── urdf/
-│   ├── warehouse_bot.urdf.xacro        # Fichier principal (inclusions)
-│   ├── inertial_macros.xacro           # Macros d'inertie (box, cylinder, sphere)
-│   ├── robot_core.xacro                # Corps du robot complet
-│   ├── lidar.xacro                     # Capteur LiDAR 2D (gpu_lidar)
-│   ├── imu.xacro                       # Centrale inertielle
-│   └── gazebo_control.xacro            # Plugins DiffDrive + JointStatePublisher
-├── launch/
-│   ├── sim.launch.py                   # Simulation monde vide
-│   └── display.launch.py              # Visualisation URDF seule (RViz)
-├── config/
-│   └── bridge.yaml                     # Mapping topics Gazebo ↔ ROS 2
-└── rviz/
-    └── view_robot.rviz                # Config RViz (robot, TF, LiDAR, odom)
-```
-
----
-
 ## 🔧 Prérequis
 
 - **OS** : Ubuntu 24.04 LTS (64-bit)
@@ -79,26 +55,6 @@ Suivre la [documentation officielle ROS 2 Jazzy](https://docs.ros.org/en/jazzy/I
 
 Suivre la procédure officielle : **[Install Gazebo Harmonic on Ubuntu](https://gazebosim.org/docs/harmonic/install_ubuntu/)**
 
-```bash
-sudo apt-get update
-sudo apt-get install curl lsb-release gnupg
-
-sudo curl https://packages.osrfoundation.org/gazebo.gpg \
-  --output /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
-
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] \
-  http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" \
-  | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null
-
-sudo apt-get update
-sudo apt-get install gz-harmonic
-```
-
-> ⚠️ **Important** : Définir la variable d'environnement pour forcer la version Harmonic :
-> ```bash
-> echo 'export GZ_VERSION=harmonic' >> ~/.bashrc
-> source ~/.bashrc
-> ```
 
 ### 3. Installer les dépendances ROS-Gazebo
 
@@ -133,12 +89,6 @@ source install/setup.bash
 
 > 💡 **Astuce** : Ajoutez `source ~/ros2_ws/install/setup.bash` à votre `~/.bashrc` pour ne pas le refaire à chaque terminal.
 
-### 5. Vérifier l'installation
-
-```bash
-gz sim --version    # Doit afficher Gazebo Sim 8.x
-ros2 pkg list | grep industry_robot   # Doit afficher industry_robot
-```
 
 ---
 
@@ -236,25 +186,3 @@ odom (publié par DiffDrive)
            ├── rear_left_wheel_link
            └── rear_right_wheel_link
 ```
-
----
-
-## 🖥️ Configuration WSL2 (Windows)
-
-Si vous travaillez sous **Windows avec WSL2**, Gazebo peut nécessiter une configuration graphique supplémentaire.
-
-### Vérifier et mettre à jour WSL
-
-```powershell
-# Dans PowerShell (admin)
-wsl --version
-wsl --shutdown
-wsl --update
-```
-
-### Installer les outils graphiques
-
-```bash
-sudo apt install -y mesa-utils vulkan-tools
-```
-
