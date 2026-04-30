@@ -87,10 +87,10 @@ def generate_launch_description():
 
         # Ajout des topics de ce robot au bridge
         bridge_args.extend([
-            f'/{name}/cmd_vel@geometry_msgs/msg/Twist]/model/{name}/cmd_vel',
-            f'/{name}/odom@nav_msgs/msg/Odometry[/model/{name}/odometry',
-            f'/{name}/tf@tf2_msgs/msg/TFMessage[/model/{name}/tf',
-            f'/{name}/joint_states@sensor_msgs/msg/JointState[/model/{name}/joint_states',
+            f'/{name}/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
+            f'/{name}/odom@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+            f'/{name}/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+            f'/{name}/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
             f'/{name}/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
             f'/{name}/imu@sensor_msgs/msg/Imu[gz.msgs.IMU'
         ])

@@ -32,7 +32,10 @@
             <wheel_separation>0.63</wheel_separation>
             <wheel_radius>0.125</wheel_radius>
 
-            <!-- Topics de communication supprimés pour utiliser les valeurs par défaut de Gazebo (/model/robot1/cmd_vel) -->
+            <!-- Topics de communication -->
+            <topic>${topic_prefix}/cmd_vel</topic>
+            <odom_topic>${topic_prefix}/odom</odom_topic>
+            <tf_topic>${topic_prefix}/tf</tf_topic>
 
             <!-- Frames de l'odométrie -->
             <frame_id>${frame_prefix}odom</frame_id>
@@ -63,7 +66,7 @@
     <gazebo>
         <plugin filename="gz-sim-joint-state-publisher-system"
                 name="gz::sim::systems::JointStatePublisher">
-            <topic>joint_states</topic>
+            <topic>${topic_prefix}/joint_states</topic>
             <joint_name>front_left_wheel_joint</joint_name>
             <joint_name>rear_left_wheel_joint</joint_name>
             <joint_name>front_right_wheel_joint</joint_name>
