@@ -74,7 +74,7 @@ def generate_launch_description():
                 executable='create',
                 name=f'{name}_spawner',
                 arguments=[
-                    '-string', robot_desc, # On passe directement l'URDF via -string car -topic nécessiterait de résoudre le namespace complet
+                    '-topic', f'/{name}/robot_description',
                     '-name', name,
                     '-x', robot['x'],
                     '-y', robot['y'],
