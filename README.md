@@ -152,14 +152,41 @@ ros2 launch industry_robot display.launch.py
 
 Ouvre **RViz** avec un slider GUI pour manipuler les roues. Idéal pour vérifier le modèle 3D et l'arbre TF.
 
-### Option 2 — Simulation dans le monde par défaut (vide)
+### Option 2 — Simulation dans le monde créé sur Gazebo
 
 ```bash
 ros2 launch industry_robot sim.launch.py
 ```
 
-Lance **Gazebo Harmonic** (monde vide) + **RViz** + le bridge ROS-Gazebo.
+Lance **Gazebo Harmonic** (Simulation hangar industriel) + **RViz** + le bridge ROS-Gazebo.
 
+---
+
+### Option 3 — Visualisation du monde uniquement (avec Gazebo)
+
+```bash
+gz sim worlds/warehouse.sdf
+```
+
+Lance **Gazebo Harmonic** (Hangar industriel).
+
+Si vous voulez apporter des modifications **du warehouse.sdf**, vous pouvez modifier le script de génération du monde 
+
+```bash
+code scripts/world/generate_warehouse.py
+```
+
+Et après l'executer manuellement avec la commande:
+
+```bash
+python3 scripts/world/generate_warehouse.py
+```
+
+Puis enfin:
+
+```bash
+gz sim worlds/warehouse.sdf
+```
 ---
 
 ## 🎮 Piloter le Robot
