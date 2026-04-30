@@ -137,6 +137,17 @@ Puis enfin:
 ```bash
 gz sim worlds/warehouse.sdf
 ```
+
+---
+
+### Option 4 — Simulation Multi-Robots (Flotte de 4 AMR)
+
+```bash
+ros2 launch industry_robot multi_sim.launch.py
+```
+
+Lance **Gazebo Harmonic** et génère simultanément **4 robots** dans l'entrepôt (`robot1`, `robot2`, `robot3`, `robot4`), avec des topics et des TF correctement isolés dans leurs *namespaces* respectifs. Idéal pour tester des algorithmes de gestion de flotte multi-agents.
+
 ---
 
 ## 🎮 Piloter le Robot
@@ -145,7 +156,12 @@ Dans un **nouveau terminal** (n'oubliez pas de sourcer) :
 
 ```bash
 source ~/ros2_ws/install/setup.bash
+
+# Si vous utilisez Option 2 (1 seul robot) :
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
+
+# Si vous utilisez Option 4 (Multi-robots, ex: contrôler robot1) :
+ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/robot1/cmd_vel
 ```
 
 | Touche | Action |
