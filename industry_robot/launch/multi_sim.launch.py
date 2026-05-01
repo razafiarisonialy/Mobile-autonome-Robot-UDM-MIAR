@@ -125,8 +125,8 @@ def generate_launch_description():
                 f'/model/{name}/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
                 f'/model/{name}/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
                 f'/model/{name}/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-                # JointState
-                f'/model/{name}/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
+                # JointState (Gazebo Harmonic publie joint_state au singulier)
+                f'/model/{name}/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
                 # Capteurs (déjà sous /<name>/...)
                 f'/{name}/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
                 f'/{name}/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
@@ -135,7 +135,7 @@ def generate_launch_description():
                 (f'/model/{name}/cmd_vel', f'/{name}/cmd_vel'),
                 (f'/model/{name}/odometry', f'/{name}/odom'),
                 (f'/model/{name}/tf', '/tf'),
-                (f'/model/{name}/joint_states', f'/{name}/joint_states'),
+                (f'/model/{name}/joint_state', f'/{name}/joint_states'),
             ],
             parameters=[{'use_sim_time': True}],
             output='screen'
