@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="$(arg robot_core_name)">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="warehouse_bot">
 
-    <xacro:arg name="robot_core_name" default="warehouse_bot"/>
     <xacro:arg name="namespace" default=""/>
     
     <xacro:if value="${'$(arg namespace)' != ''}">

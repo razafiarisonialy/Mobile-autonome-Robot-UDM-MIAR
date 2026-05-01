@@ -57,7 +57,7 @@ def generate_launch_description():
 
         # Commande pour générer l'URDF avec le paramètre namespace
         robot_desc = ParameterValue(
-            Command(['xacro ', xacro_file, ' robot_core_name:=', name, ' namespace:=', name]),
+            Command(['xacro ', xacro_file, ' namespace:=', name]),
             value_type=str
         )
 
