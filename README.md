@@ -63,6 +63,7 @@ sudo apt install -y \
   ros-jazzy-ros-gz-sim \
   ros-jazzy-ros-gz-bridge \
   ros-jazzy-robot-state-publisher \
+  ros-jazzy-joint-state-publisher \
   ros-jazzy-joint-state-publisher-gui \
   ros-jazzy-xacro \
   ros-jazzy-teleop-twist-keyboard \
@@ -131,10 +132,10 @@ Dans un **nouveau terminal** (n'oubliez pas de sourcer) :
 ```bash
 source ~/ros2_ws/install/setup.bash
 
-# Si vous utilisez Option 2 (1 seul robot) :
+# Si vous utilisez Option 1 (1 seul robot) :
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
-# Si vous utilisez Option 4 (Multi-robots, ex: contrôler robot1) :
+# Si vous utilisez Option 3 (Multi-robots, ex: contrôler robot1) :
 ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/robot1/cmd_vel
 ```
 
@@ -157,7 +158,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/rob
 | `/odom` | `nav_msgs/Odometry` | GZ → ROS | Odométrie du robot |
 | `/scan` | `sensor_msgs/LaserScan` | GZ → ROS | Données LiDAR 360° |
 | `/imu` | `sensor_msgs/Imu` | GZ → ROS | Accélérations et rotations |
-| `/joint_states` | `sensor_msgs/JointState` | GZ → ROS | Position des roues |
+| `/joint_states` | `sensor_msgs/JointState` | GZ → ROS | Position des roues (via `joint_state_publisher`) |
 | `/tf` | `tf2_msgs/TFMessage` | GZ → ROS | Transformations TF |
 | `/clock` | `rosgraph_msgs/Clock` | GZ → ROS | Horloge simulée |
 
