@@ -94,15 +94,7 @@ source install/setup.bash
 
 ## 🚀 Lancement
 
-### Option 1 — Visualisation du modèle URDF seul (sans Gazebo)
-
-```bash
-ros2 launch industry_robot display.launch.py
-```
-
-Ouvre **RViz** avec un slider GUI pour manipuler les roues. Idéal pour vérifier le modèle 3D et l'arbre TF.
-
-### Option 2 — Simulation dans le monde créé sur Gazebo
+### Option 1 — Simulation dans le monde créé sur Gazebo
 
 ```bash
 ros2 launch industry_robot sim.launch.py
@@ -112,7 +104,7 @@ Lance **Gazebo Harmonic** (Simulation hangar industriel) + **RViz** + le bridge 
 
 ---
 
-### Option 3 — Visualisation du monde uniquement (avec Gazebo)
+### Option 2 — Visualisation du monde uniquement (avec Gazebo)
 
 ```bash
 gz sim worlds/warehouse.sdf
@@ -122,7 +114,7 @@ Lance **Gazebo Harmonic** (Hangar industriel).
 
 ---
 
-### Option 4 — Simulation Multi-Robots (Flotte de 4 AMR)
+### Option 3 — Simulation Multi-Robots (Flotte de 4 AMR)
 
 ```bash
 ros2 launch industry_robot multi_sim.launch.py

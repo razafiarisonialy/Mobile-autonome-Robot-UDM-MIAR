@@ -74,7 +74,11 @@ def generate_launch_description():
                     'robot_description': robot_desc,
                     'use_sim_time': True,
                     'frame_prefix': f'{name}/'
-                }]
+                }],
+                remappings=[
+                    ('/tf', '/tf'),
+                    ('/tf_static', '/tf_static'),
+                ]
             ),
             # Spawner
             Node(
@@ -130,7 +134,7 @@ def generate_launch_description():
             remappings=[
                 (f'/model/{name}/cmd_vel', f'/{name}/cmd_vel'),
                 (f'/model/{name}/odometry', f'/{name}/odom'),
-                (f'/model/{name}/tf', f'/{name}/tf'),
+                (f'/model/{name}/tf', '/tf'),
                 (f'/model/{name}/joint_states', f'/{name}/joint_states'),
             ],
             parameters=[{'use_sim_time': True}],
