@@ -120,24 +120,6 @@ gz sim worlds/warehouse.sdf
 
 Lance **Gazebo Harmonic** (Hangar industriel).
 
-Si vous voulez apporter des modifications **du warehouse.sdf**, vous pouvez modifier le script de génération du monde 
-
-```bash
-code scripts/world/generate_warehouse.py
-```
-
-Et après l'executer manuellement avec la commande:
-
-```bash
-python3 scripts/world/generate_warehouse.py
-```
-
-Puis enfin:
-
-```bash
-gz sim worlds/warehouse.sdf
-```
-
 ---
 
 ### Option 4 — Simulation Multi-Robots (Flotte de 4 AMR)
@@ -203,29 +185,3 @@ ros2 topic echo /scan --once
 ros2 run tf2_tools view_frames
 ```
 
----
-
-## 🌳 Hiérarchie TF
-
-```
-odom (publié par DiffDrive)
- └── base_footprint
-      └── base_link
-           ├── chassis_link
-           │    ├── cargo_platform_link
-           │    │    ├── left_rail_link
-           │    │    └── right_rail_link
-           │    ├── front_mast_link
-           │    │    ├── lidar_link
-           │    │    ├── estop_link
-           │    │    ├── left_head_light_link
-           │    │    ├── right_head_light_link
-           │    │    └── status_led_link
-           │    ├── imu_link
-           │    ├── front_bumper_link
-           │    └── 4× support_post_links
-           ├── front_left_wheel_link
-           ├── front_right_wheel_link
-           ├── rear_left_wheel_link
-           └── rear_right_wheel_link
-```

@@ -15,7 +15,7 @@ def generate_launch_description():
     xacro_file = os.path.join(pkg_share, 'urdf', 'warehouse_bot.urdf.xacro')
     world_file = os.path.join(pkg_share, 'worlds', 'warehouse.sdf')
 
-    # 1. Génération du monde s'il n'existe pas
+    # Génération du monde s'il n'existe pas
     if not os.path.isfile(world_file):
         scripts_dir = os.path.join(pkg_share, 'scripts', 'world')
         sys.path.insert(0, scripts_dir)
@@ -23,7 +23,7 @@ def generate_launch_description():
         os.makedirs(os.path.join(pkg_share, 'worlds'), exist_ok=True)
         generate_warehouse_sdf(4, 3, 4, world_file)
 
-    # 2. Lancement de Gazebo
+    # Lancement de Gazebo
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')
@@ -33,7 +33,7 @@ def generate_launch_description():
 
     nodes = [gazebo]
 
-    # 3. Bridge horloge (global, unique)
+    # Bridge horloge (global, unique)
     clock_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -89,22 +89,29 @@ def generate_launch_description():
                     '-z', '0.2',
                 ],
                 output='screen'
+            ),
+            # Static TF publisher: world -> {name}/odom
+            Node(
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                name=f'{name}_static_tf',
+                arguments=[
+                    robot['x'], robot['y'], '0',  # x y z
+                    '0', '0', '0',                # roll pitch yaw
+                    'world', f'{name}/odom'
+                ],
+                output='screen'
             )
         ])
         nodes.append(robot_group)
 
-        # ============================================================
         # Bridge par robot
-        # Gazebo Harmonic crée les topics DiffDrive/JointState sous
-        #   /model/<model_name>/cmd_vel, /model/<model_name>/odometry, etc.
-        # Les capteurs (LiDAR, IMU) utilisent directement /<namespace>/...
-        #
-        # On utilise des remappings ROS pour traduire :
+        # remappings ROS:
         #   /model/<name>/cmd_vel  →  /<name>/cmd_vel
         #   /model/<name>/odometry →  /<name>/odom
         #   /model/<name>/tf       →  /<name>/tf
         #   /model/<name>/joint_states → /<name>/joint_states
-        # ============================================================
+
         robot_bridge = Node(
             package='ros_gz_bridge',
             executable='parameter_bridge',
@@ -131,8 +138,8 @@ def generate_launch_description():
         )
         nodes.append(robot_bridge)
 
-    # 4. RViz (optionnel)
-    rviz_config = os.path.join(pkg_share, 'rviz', 'view_robot.rviz')
+    # RViz
+    rviz_config = os.path.join(pkg_share, 'rviz', 'multi_sim.rviz')
     rviz = Node(
         package='rviz2',
         executable='rviz2',
