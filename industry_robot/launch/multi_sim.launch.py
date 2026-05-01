@@ -14,8 +14,9 @@ def generate_launch_description():
 
     xacro_file = os.path.join(pkg_share, 'urdf', 'warehouse_bot.urdf.xacro')
     world_file = os.path.join(pkg_share, 'worlds', 'warehouse.sdf')
+    world_name = 'warehouse_world'  # doit correspondre à <world name="..."> dans warehouse.sdf
 
-    # 1. Génération du monde s'il n'existe pas
+    # Génération du monde s'il n'existe pas
     if not os.path.isfile(world_file):
         scripts_dir = os.path.join(pkg_share, 'scripts', 'world')
         sys.path.insert(0, scripts_dir)
@@ -23,7 +24,7 @@ def generate_launch_description():
         os.makedirs(os.path.join(pkg_share, 'worlds'), exist_ok=True)
         generate_warehouse_sdf(4, 3, 4, world_file)
 
-    # 2. Lancement de Gazebo
+    # Lancement de Gazebo
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')
@@ -33,7 +34,7 @@ def generate_launch_description():
 
     nodes = [gazebo]
 
-    # 3. Bridge horloge (global, unique)
+    # Bridge horloge (global, unique)
     clock_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -74,7 +75,26 @@ def generate_launch_description():
                     'robot_description': robot_desc,
                     'use_sim_time': True,
                     'frame_prefix': f'{name}/'
-                }]
+                }],
+                remappings=[
+                    ('/tf', '/tf'),
+                    ('/tf_static', '/tf_static'),
+                ]
+            ),
+            # Joint State Publisher — garantit que RSP reçoit des joint_states pour les roues.
+            # source_list: utilise les vraies valeurs Gazebo si le bridge fonctionne,
+            # sinon publie des positions nulles (roues visibles mais sans rotation RViz).
+            Node(
+                package='joint_state_publisher',
+                executable='joint_state_publisher',
+                name=f'{name}_joint_state_publisher',
+                namespace=name,
+                parameters=[{
+                    'robot_description': robot_desc,
+                    'use_sim_time': True,
+                    'source_list': [f'/{name}/joint_states_gz'],
+                }],
+                output='screen'
             ),
             # Spawner
             Node(
@@ -89,22 +109,26 @@ def generate_launch_description():
                     '-z', '0.2',
                 ],
                 output='screen'
+            ),
+            # Static TF publisher: world -> {name}/odom
+            Node(
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                name=f'{name}_static_tf',
+                arguments=[
+                    robot['x'], robot['y'], '0',  # x y z
+                    '0', '0', '0',                # roll pitch yaw
+                    'world', f'{name}/odom'
+                ],
+                output='screen'
             )
         ])
         nodes.append(robot_group)
 
-        # ============================================================
-        # Bridge par robot
-        # Gazebo Harmonic crée les topics DiffDrive/JointState sous
-        #   /model/<model_name>/cmd_vel, /model/<model_name>/odometry, etc.
-        # Les capteurs (LiDAR, IMU) utilisent directement /<namespace>/...
-        #
-        # On utilise des remappings ROS pour traduire :
-        #   /model/<name>/cmd_vel  →  /<name>/cmd_vel
-        #   /model/<name>/odometry →  /<name>/odom
-        #   /model/<name>/tf       →  /<name>/tf
-        #   /model/<name>/joint_states → /<name>/joint_states
-        # ============================================================
+        # Bridge par robot.
+        # JointState : Gazebo Harmonic JointStatePublisher publie sous le chemin world-scopé :
+        #   /world/{world_name}/model/{name}/joint_state  (gz.msgs.Model)
+        # On remapie vers /{name}/joint_states_gz pour que joint_state_publisher l'utilise.
         robot_bridge = Node(
             package='ros_gz_bridge',
             executable='parameter_bridge',
@@ -114,8 +138,8 @@ def generate_launch_description():
                 f'/model/{name}/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
                 f'/model/{name}/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
                 f'/model/{name}/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-                # JointState
-                f'/model/{name}/joint_states@sensor_msgs/msg/JointState[gz.msgs.Model',
+                # JointState — topic world-scopé de Gazebo Harmonic JointStatePublisher
+                f'/world/{world_name}/model/{name}/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
                 # Capteurs (déjà sous /<name>/...)
                 f'/{name}/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
                 f'/{name}/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
@@ -123,16 +147,16 @@ def generate_launch_description():
             remappings=[
                 (f'/model/{name}/cmd_vel', f'/{name}/cmd_vel'),
                 (f'/model/{name}/odometry', f'/{name}/odom'),
-                (f'/model/{name}/tf', f'/{name}/tf'),
-                (f'/model/{name}/joint_states', f'/{name}/joint_states'),
+                (f'/model/{name}/tf', '/tf'),
+                (f'/world/{world_name}/model/{name}/joint_state', f'/{name}/joint_states_gz'),
             ],
             parameters=[{'use_sim_time': True}],
             output='screen'
         )
         nodes.append(robot_bridge)
 
-    # 4. RViz (optionnel)
-    rviz_config = os.path.join(pkg_share, 'rviz', 'view_robot.rviz')
+    # RViz
+    rviz_config = os.path.join(pkg_share, 'rviz', 'multi_sim.rviz')
     rviz = Node(
         package='rviz2',
         executable='rviz2',

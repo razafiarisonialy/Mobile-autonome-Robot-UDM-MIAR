@@ -1,16 +1,6 @@
 <?xml version="1.0"?>
-<!-- ================================================================
-     imu.xacro — Centrale inertielle (IMU) intégrée dans le châssis
-     Capteur de type "imu" (Gazebo Harmonic), fréquence 50 Hz.
-     Rattaché à chassis_link dans la hiérarchie TF.
-     ================================================================ -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-    <!-- ============================================================
-         LIEN ET JOINT DE L'IMU
-         Petit cube 3×3×1 cm, placé au centre du châssis.
-         Visuellement jaune pour le repérer dans RViz.
-         ============================================================ -->
     <joint name="imu_joint" type="fixed">
         <parent link="chassis_link"/>
         <child link="imu_link"/>
@@ -29,13 +19,13 @@
         </xacro:inertial_box>
     </link>
 
-    <!-- ============================================================
+    <!-- 
          PLUGIN CAPTEUR IMU — Gazebo Harmonic
          Configuration :
            - Fréquence : 50 Hz
            - Publication sur le topic "imu"
            - Frame de référence : imu_link
-         ============================================================ -->
+    -->
     <gazebo reference="imu_link">
         <sensor name="imu_sensor" type="imu">
             <pose>0 0 0 0 0 0</pose>

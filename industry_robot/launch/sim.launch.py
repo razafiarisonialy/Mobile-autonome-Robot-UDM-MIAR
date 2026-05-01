@@ -1,9 +1,3 @@
-# ================================================================
-# sim.launch.py — Lancement complet de la simulation
-# Démarre : Gazebo Harmonic + robot_state_publisher + spawner
-#           + bridge ros_gz + RViz2
-# ================================================================
-
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -25,9 +19,8 @@ def generate_launch_description():
     rviz_config   = os.path.join(pkg_share, 'rviz', 'view_robot.rviz')
     world_file = os.path.join(pkg_share, 'worlds', 'warehouse.sdf')
 
-    # Generation du monde SDF (si nécessaire)
+    # Generation du monde SDF
     if not os.path.isfile(world_file):
-        # Ajouter le dossier scripts/ au path pour importer le générateur
         scripts_dir = os.path.join(pkg_share, 'scripts', 'world')
         sys.path.insert(0, scripts_dir)
         from generate_warehouse import generate_warehouse_sdf
@@ -43,15 +36,13 @@ def generate_launch_description():
         print(f"[sim.launch.py] Monde existant trouvé : {world_file}")
         print("  → Pour régénérer, supprimer ce fichier et relancer.")
 
-    # --- Conversion Xacro → URDF (dynamique au lancement) ---
+    # Conversion Xacro → URDF
     robot_description = ParameterValue(
         Command(['xacro ', xacro_file]),
         value_type=str
     )
 
-    # ============================================================
-    # 1. GAZEBO HARMONIC — Lancer le simulateur avec un monde vide
-    # ============================================================
+    # GAZEBO HARMONIC — Lancer le simulateur avec un monde vide
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')
@@ -59,9 +50,7 @@ def generate_launch_description():
         launch_arguments={'gz_args': f'-r {world_file}'}.items()
     )
 
-    # ============================================================
-    # 2. ROBOT STATE PUBLISHER — Publie les TFs du robot
-    # ============================================================
+    # ROBOT STATE PUBLISHER — Publie les TFs du robot
     robot_state_publisher = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -72,10 +61,21 @@ def generate_launch_description():
         }]
     )
 
-    # ============================================================
-    # 3. SPAWNER — Faire apparaître le robot dans Gazebo
-    #    Utilise le topic /robot_description pour récupérer l'URDF
-    # ============================================================
+    # JOINT STATE PUBLISHER — Fournit les joint_states aux roues (continuous joints)
+    # source_list: utilise les vraies valeurs Gazebo si le bridge fonctionne,
+    # sinon publie des positions nulles (roues visibles dans RViz).
+    joint_state_publisher = Node(
+        package='joint_state_publisher',
+        executable='joint_state_publisher',
+        parameters=[{
+            'robot_description': robot_description,
+            'use_sim_time': True,
+            'source_list': ['joint_states_gz'],
+        }],
+        output='screen'
+    )
+
+    # SPAWNER — Faire apparaître le robot dans Gazebo
     spawn_entity = Node(
         package='ros_gz_sim',
         executable='create',
@@ -89,10 +89,7 @@ def generate_launch_description():
         output='screen'
     )
 
-    # ============================================================
-    # 4. BRIDGE ROS_GZ — Pont de communication Gazebo ↔ ROS 2
-    #    Configuré via le fichier YAML (config/bridge.yaml)
-    # ============================================================
+    # BRIDGE ROS_GZ — Pont de communication Gazebo ↔ ROS 2
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
@@ -103,9 +100,7 @@ def generate_launch_description():
         output='screen'
     )
 
-    # ============================================================
-    # 5. RVIZ2 — Visualisation du robot et des données capteurs
-    # ============================================================
+    # RVIZ2 — Visualisation du robot et des données capteurs
     rviz = Node(
         package='rviz2',
         executable='rviz2',
@@ -117,6 +112,7 @@ def generate_launch_description():
     return LaunchDescription([
         gazebo,
         robot_state_publisher,
+        joint_state_publisher,
         spawn_entity,
         bridge,
         rviz,

@@ -1,0 +1,179 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grille
+      Enabled: true
+      Cell Count: 40
+      Cell Size: 0.5
+      Color: 100; 100; 100
+      Line Style:
+        Value: Lines
+      Plane: XY
+      Plane Cell Count: 40
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: false
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Marker Scale: 0.3
+    - Class: rviz_default_plugins/RobotModel
+      Name: Modèle robot1
+      Description Topic:
+        Value: /robot1/robot_description
+      TF Prefix: robot1
+      Enabled: true
+      Visual Enabled: true
+      Collision Enabled: false
+      Alpha: 1.0
+    - Class: rviz_default_plugins/LaserScan
+      Name: LiDAR robot1
+      Topic:
+        Value: /robot1/scan
+        Reliability Policy: Best Effort
+      Size (m): 0.05
+      Color Transformer: FlatColor
+      Color: 255; 50; 50
+      Enabled: true
+      Queue Size: 5
+    - Class: rviz_default_plugins/Odometry
+      Name: Odom robot1
+      Topic:
+        Value: /robot1/odom
+      Enabled: true
+      Keep: 50
+      Shape:
+        Value: Arrow
+      Color: 255; 50; 50
+      Covariance:
+        Value: false
+      Position Tolerance: 0.1
+      Angle Tolerance: 0.1
+    - Class: rviz_default_plugins/RobotModel
+      Name: Modèle robot2
+      Description Topic:
+        Value: /robot2/robot_description
+      TF Prefix: robot2
+      Enabled: true
+      Visual Enabled: true
+      Collision Enabled: false
+      Alpha: 1.0
+    - Class: rviz_default_plugins/LaserScan
+      Name: LiDAR robot2
+      Topic:
+        Value: /robot2/scan
+        Reliability Policy: Best Effort
+      Size (m): 0.05
+      Color Transformer: FlatColor
+      Color: 50; 255; 50
+      Enabled: true
+      Queue Size: 5
+    - Class: rviz_default_plugins/Odometry
+      Name: Odom robot2
+      Topic:
+        Value: /robot2/odom
+      Enabled: true
+      Keep: 50
+      Shape:
+        Value: Arrow
+      Color: 50; 255; 50
+      Covariance:
+        Value: false
+      Position Tolerance: 0.1
+      Angle Tolerance: 0.1
+    - Class: rviz_default_plugins/RobotModel
+      Name: Modèle robot3
+      Description Topic:
+        Value: /robot3/robot_description
+      TF Prefix: robot3
+      Enabled: true
+      Visual Enabled: true
+      Collision Enabled: false
+      Alpha: 1.0
+    - Class: rviz_default_plugins/LaserScan
+      Name: LiDAR robot3
+      Topic:
+        Value: /robot3/scan
+        Reliability Policy: Best Effort
+      Size (m): 0.05
+      Color Transformer: FlatColor
+      Color: 50; 50; 255
+      Enabled: true
+      Queue Size: 5
+    - Class: rviz_default_plugins/Odometry
+      Name: Odom robot3
+      Topic:
+        Value: /robot3/odom
+      Enabled: true
+      Keep: 50
+      Shape:
+        Value: Arrow
+      Color: 50; 50; 255
+      Covariance:
+        Value: false
+      Position Tolerance: 0.1
+      Angle Tolerance: 0.1
+    - Class: rviz_default_plugins/RobotModel
+      Name: Modèle robot4
+      Description Topic:
+        Value: /robot4/robot_description
+      TF Prefix: robot4
+      Enabled: true
+      Visual Enabled: true
+      Collision Enabled: false
+      Alpha: 1.0
+    - Class: rviz_default_plugins/LaserScan
+      Name: LiDAR robot4
+      Topic:
+        Value: /robot4/scan
+        Reliability Policy: Best Effort
+      Size (m): 0.05
+      Color Transformer: FlatColor
+      Color: 255; 255; 50
+      Enabled: true
+      Queue Size: 5
+    - Class: rviz_default_plugins/Odometry
+      Name: Odom robot4
+      Topic:
+        Value: /robot4/odom
+      Enabled: true
+      Keep: 50
+      Shape:
+        Value: Arrow
+      Color: 255; 255; 50
+      Covariance:
+        Value: false
+      Position Tolerance: 0.1
+      Angle Tolerance: 0.1
+
+  Global Options:
+    Fixed Frame: world
+    Frame Rate: 30
+    Background Color: 48; 48; 48
+
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+    - Class: rviz_default_plugins/Measure
+
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 10.0
+      Pitch: 0.8
+      Yaw: 0.0
+      Focal Point:
+        X: 0.0
+        Y: 0.0
+        Z: 0.0
+      Target Frame: world
+      Near Clip Distance: 0.01
+      Far Clip Distance: 1000.0
