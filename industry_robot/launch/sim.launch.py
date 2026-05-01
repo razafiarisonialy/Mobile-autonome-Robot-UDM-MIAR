@@ -61,6 +61,20 @@ def generate_launch_description():
         }]
     )
 
+    # JOINT STATE PUBLISHER — Fournit les joint_states aux roues (continuous joints)
+    # source_list: utilise les vraies valeurs Gazebo si le bridge fonctionne,
+    # sinon publie des positions nulles (roues visibles dans RViz).
+    joint_state_publisher = Node(
+        package='joint_state_publisher',
+        executable='joint_state_publisher',
+        parameters=[{
+            'robot_description': robot_description,
+            'use_sim_time': True,
+            'source_list': ['joint_states_gz'],
+        }],
+        output='screen'
+    )
+
     # SPAWNER — Faire apparaître le robot dans Gazebo
     spawn_entity = Node(
         package='ros_gz_sim',
@@ -98,6 +112,7 @@ def generate_launch_description():
     return LaunchDescription([
         gazebo,
         robot_state_publisher,
+        joint_state_publisher,
         spawn_entity,
         bridge,
         rviz,
