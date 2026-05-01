@@ -1,44 +1,41 @@
 # ================================================================
 # bridge.yaml — Configuration du pont ros_gz_bridge
 # Mappage des topics entre Gazebo Harmonic et ROS 2 Jazzy.
-# Chaque entrée définit : topic ROS, topic Gazebo, types, direction.
+# Mode mono-robot (sim.launch.py).
+#
+# IMPORTANT : Gazebo Harmonic crée les topics DiffDrive/JointState
+# sous /model/<model_name>/... automatiquement.
 # ================================================================
 
 # --- Commande de vitesse : ROS 2 → Gazebo ---
-# Le noeud de navigation (ou teleop) publie sur /cmd_vel côté ROS,
-# le plugin DiffDrive écoute cmd_vel côté Gazebo.
 - ros_topic_name: "cmd_vel"
-  gz_topic_name: "cmd_vel"
+  gz_topic_name: "/model/warehouse_bot/cmd_vel"
   ros_type_name: "geometry_msgs/msg/Twist"
   gz_type_name: "gz.msgs.Twist"
   direction: ROS_TO_GZ
 
 # --- Odométrie : Gazebo → ROS 2 ---
-# Le plugin DiffDrive publie la pose estimée du robot.
 - ros_topic_name: "odom"
-  gz_topic_name: "odom"
+  gz_topic_name: "/model/warehouse_bot/odometry"
   ros_type_name: "nav_msgs/msg/Odometry"
   gz_type_name: "gz.msgs.Odometry"
   direction: GZ_TO_ROS
 
 # --- Transformations TF : Gazebo → ROS 2 ---
-# Le plugin DiffDrive publie la TF odom → base_footprint.
 - ros_topic_name: "tf"
-  gz_topic_name: "tf"
+  gz_topic_name: "/model/warehouse_bot/tf"
   ros_type_name: "tf2_msgs/msg/TFMessage"
   gz_type_name: "gz.msgs.Pose_V"
   direction: GZ_TO_ROS
 
 # --- États des articulations : Gazebo → ROS 2 ---
-# Le plugin JointStatePublisher publie les positions des roues.
 - ros_topic_name: "joint_states"
-  gz_topic_name: "joint_states"
+  gz_topic_name: "/model/warehouse_bot/joint_states"
   ros_type_name: "sensor_msgs/msg/JointState"
   gz_type_name: "gz.msgs.Model"
   direction: GZ_TO_ROS
 
 # --- LiDAR 2D : Gazebo → ROS 2 ---
-# Le capteur gpu_lidar publie les données de scan laser.
 - ros_topic_name: "scan"
   gz_topic_name: "scan"
   ros_type_name: "sensor_msgs/msg/LaserScan"
@@ -46,7 +43,6 @@
   direction: GZ_TO_ROS
 
 # --- IMU : Gazebo → ROS 2 ---
-# Le capteur IMU publie accélérations et vitesses angulaires.
 - ros_topic_name: "imu"
   gz_topic_name: "imu"
   ros_type_name: "sensor_msgs/msg/Imu"
@@ -54,7 +50,6 @@
   direction: GZ_TO_ROS
 
 # --- Horloge simulée : Gazebo → ROS 2 ---
-# Synchronise le temps ROS avec le temps de simulation Gazebo.
 - ros_topic_name: "clock"
   gz_topic_name: "clock"
   ros_type_name: "rosgraph_msgs/msg/Clock"

@@ -32,14 +32,16 @@
             <wheel_separation>0.63</wheel_separation>
             <wheel_radius>0.125</wheel_radius>
 
-            <!-- Topics de communication -->
-            <topic>cmd_vel</topic>
-            <odom_topic>odom</odom_topic>
-            <tf_topic>/tf</tf_topic>
+            <!-- Topics : laissés en défaut Gazebo Harmonic.
+                 GZ crée automatiquement :
+                   /model/<model_name>/cmd_vel
+                   /model/<model_name>/odometry
+                   /model/<model_name>/tf
+                 Le bridge ROS remappe vers /<namespace>/cmd_vel etc. -->
 
             <!-- Frames de l'odométrie -->
-            <frame_id>odom</frame_id>
-            <child_frame_id>base_footprint</child_frame_id>
+            <frame_id>${frame_prefix}odom</frame_id>
+            <child_frame_id>${frame_prefix}base_footprint</child_frame_id>
 
             <!-- Fréquence de publication de l'odométrie (Hz) -->
             <odom_publish_frequency>50</odom_publish_frequency>
@@ -60,13 +62,12 @@
 
     <!-- ============================================================
          PLUGIN JOINT STATE PUBLISHER (gz-sim-joint-state-publisher-system)
-         Publie les positions angulaires des roues sur /joint_states.
-         Nécessaire pour que robot_state_publisher calcule les TFs.
+         Publie les positions angulaires des roues.
+         GZ Harmonic publie par défaut sur /model/<model_name>/joint_states.
          ============================================================ -->
     <gazebo>
         <plugin filename="gz-sim-joint-state-publisher-system"
                 name="gz::sim::systems::JointStatePublisher">
-            <topic>joint_states</topic>
             <joint_name>front_left_wheel_joint</joint_name>
             <joint_name>rear_left_wheel_joint</joint_name>
             <joint_name>front_right_wheel_joint</joint_name>

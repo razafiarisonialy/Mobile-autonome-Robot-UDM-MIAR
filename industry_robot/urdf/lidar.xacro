@@ -42,9 +42,9 @@
         <material>Gazebo/FlatBlack</material>
         <sensor name="lidar" type="gpu_lidar">
             <pose>0 0 0 0 0 0</pose>
-            <topic>scan</topic>
+            <topic>${topic_prefix}/scan</topic>
             <update_rate>10</update_rate>
-            <gz_frame_id>lidar_link</gz_frame_id>
+            <gz_frame_id>${frame_prefix}lidar_link</gz_frame_id>
             <lidar>
                 <scan>
                     <horizontal>
