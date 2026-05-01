@@ -139,15 +139,6 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/robot1/cmd_vel
 ```
 
-| Touche | Action |
-|--------|--------|
-| `i` | Avancer |
-| `,` | Reculer |
-| `j` | Tourner à gauche |
-| `l` | Tourner à droite |
-| `k` | Stop |
-| `q`/`z` | Augmenter/diminuer vitesse |
-
 ---
 
 ## 📊 Topics ROS 2 disponibles
