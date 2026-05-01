@@ -42,6 +42,11 @@
             <!-- Frames de l'odométrie -->
             <frame_id>${frame_prefix}odom</frame_id>
             <child_frame_id>${frame_prefix}base_footprint</child_frame_id>
+            <odometry_frame>${frame_prefix}odom</odometry_frame>
+            <robot_base_frame>${frame_prefix}base_footprint</robot_base_frame>
+
+            <publish_odom>true</publish_odom>
+            <publish_odom_tf>true</publish_odom_tf>
 
             <!-- Fréquence de publication de l'odométrie (Hz) -->
             <odom_publish_frequency>50</odom_publish_frequency>

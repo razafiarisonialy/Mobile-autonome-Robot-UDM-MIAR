@@ -39,7 +39,7 @@
            - Publication sur le topic "scan"
     -->
     <gazebo reference="lidar_link">
-        <material>Gazebo/FlatBlack</material>
+        <material>Gazebo/Red</material>
         <sensor name="lidar" type="gpu_lidar">
             <pose>0 0 0 0 0 0</pose>
             <topic>${topic_prefix}/scan</topic>
