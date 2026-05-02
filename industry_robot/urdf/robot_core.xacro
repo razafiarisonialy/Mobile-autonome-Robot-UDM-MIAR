@@ -24,7 +24,7 @@
     <!-- Mât avant (support LiDAR + phares) -->
     <xacro:property name="mast_length"    value="0.10"/>
     <xacro:property name="mast_width"     value="0.35"/>
-    <xacro:property name="mast_height"    value="0.45"/>
+    <xacro:property name="mast_height"    value="0.15"/>
     <xacro:property name="mast_mass"      value="2.0"/>
 
     <!-- COULEURS (materials URDF pour RViz) -->
