@@ -9,7 +9,7 @@
     <joint name="lidar_joint" type="fixed">
         <parent link="front_mast_link"/>
         <child link="lidar_link"/>
-        <origin xyz="0 0 0.07" rpy="0 0 0"/>
+        <origin xyz="0 0 0.25" rpy="0 0 0"/>
     </joint>
 
     <link name="lidar_link">
@@ -42,7 +42,7 @@
         <material>Gazebo/Red</material>
         <sensor name="lidar" type="gpu_lidar">
             <pose>0 0 0 0 0 0</pose>
-            <topic>${topic_prefix}/scan</topic>
+            <topic>scan</topic>
             <update_rate>10</update_rate>
             <gz_frame_id>${frame_prefix}lidar_link</gz_frame_id>
             <lidar>
