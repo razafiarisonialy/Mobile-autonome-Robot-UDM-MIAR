@@ -140,15 +140,17 @@ def generate_launch_description():
                 f'/model/{name}/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
                 # JointState — topic world-scopé de Gazebo Harmonic JointStatePublisher
                 f'/world/{world_name}/model/{name}/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
-                # Capteurs (déjà sous /<name>/...)
-                f'/{name}/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
-                f'/{name}/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
+                # Capteurs (model-scoped dans Gazebo)
+                f'/model/{name}/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
+                f'/model/{name}/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
             ],
             remappings=[
                 (f'/model/{name}/cmd_vel', f'/{name}/cmd_vel'),
                 (f'/model/{name}/odometry', f'/{name}/odom'),
                 (f'/model/{name}/tf', '/tf'),
                 (f'/world/{world_name}/model/{name}/joint_state', f'/{name}/joint_states_gz'),
+                (f'/model/{name}/scan', f'/{name}/scan'),
+                (f'/model/{name}/imu', f'/{name}/imu'),
             ],
             parameters=[{'use_sim_time': True}],
             output='screen'
