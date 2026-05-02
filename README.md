@@ -81,9 +81,9 @@ cd ~/ros2_ws/src
 # Cloner le dépôt
 git clone https://github.com/razafiarisonialy/Mobile-autonome-Robot-UDM-MIAR.git
 
-# Compiler
+# Compiler tous les packages
 cd ~/ros2_ws
-colcon build --packages-select industry_robot
+colcon build --symlink-install
 
 # Sourcer l'environnement
 source install/setup.bash
@@ -96,33 +96,19 @@ source install/setup.bash
 
 ## 🚀 Lancement
 
-### Option 1 — Simulation dans le monde créé sur Gazebo
+### Option 1 — Simulation Mono-Robot
+Lance le robot dans un entrepôt avec ses capteurs et RViz.
 
 ```bash
-ros2 launch industry_robot sim.launch.py
+ros2 launch industry_robot_sim sim.launch.py
 ```
 
-Lance **Gazebo Harmonic** (Simulation hangar industriel) + **RViz** + le bridge ROS-Gazebo.
-
----
-
-### Option 2 — Visualisation du monde uniquement (avec Gazebo)
+### Option 2 — Simulation Multi-Robots (Flotte de 4 AMR)
+Génère 4 robots avec isolation par namespaces (`/robot1` à `/robot4`).
 
 ```bash
-gz sim worlds/warehouse.sdf
+ros2 launch industry_robot_multi_sim multi_sim.launch.py
 ```
-
-Lance **Gazebo Harmonic** (Hangar industriel).
-
----
-
-### Option 3 — Simulation Multi-Robots (Flotte de 4 AMR)
-
-```bash
-ros2 launch industry_robot multi_sim.launch.py
-```
-
-Lance **Gazebo Harmonic** et génère simultanément **4 robots** dans l'entrepôt (`robot1`, `robot2`, `robot3`, `robot4`), avec des topics et des TF correctement isolés dans leurs *namespaces* respectifs. Idéal pour tester des algorithmes de gestion de flotte multi-agents.
 
 ---
 
