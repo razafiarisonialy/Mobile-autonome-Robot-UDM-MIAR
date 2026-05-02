@@ -67,7 +67,8 @@ sudo apt install -y \
   ros-jazzy-joint-state-publisher-gui \
   ros-jazzy-xacro \
   ros-jazzy-teleop-twist-keyboard \
-  ros-jazzy-rviz2
+  ros-jazzy-rviz2 \
+  ros-jazzy-laser-filters
 ```
 
 ### 4. Cloner et compiler le projet
@@ -147,7 +148,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/rob
 |-------|------|-----------|-------------|
 | `/cmd_vel` | `geometry_msgs/Twist` | ROS → GZ | Commande de vitesse |
 | `/odom` | `nav_msgs/Odometry` | GZ → ROS | Odométrie du robot |
-| `/scan` | `sensor_msgs/LaserScan` | GZ → ROS | Données LiDAR 360° |
+| `/scan` | `sensor_msgs/LaserScan` | GZ → ROS | Données LiDAR 360° (brutes) |
+| `/scan_filtered` | `sensor_msgs/LaserScan` | ROS | Données LiDAR après filtrage (obstacles externes uniquement) |
 | `/imu` | `sensor_msgs/Imu` | GZ → ROS | Accélérations et rotations |
 | `/joint_states` | `sensor_msgs/JointState` | GZ → ROS | Position des roues (via `joint_state_publisher`) |
 | `/tf` | `tf2_msgs/TFMessage` | GZ → ROS | Transformations TF |
@@ -162,10 +164,30 @@ ros2 topic list
 # Voir l'odométrie en temps réel
 ros2 topic echo /odom
 
-# Voir les données LiDAR
+# Voir les données LiDAR brutes
 ros2 topic echo /scan --once
+
+# Voir les données LiDAR filtrées
+ros2 topic echo /scan_filtered --once
 
 # Visualiser l'arbre TF complet
 ros2 run tf2_tools view_frames
 ```
+
+---
+
+## 🔍 Filtrage LiDAR (anti self-detection)
+
+Le robot détecte nativement ses propres surfaces dans le scan LiDAR brut (plateau cargo notamment). Deux couches de filtrage complémentaires sont en place :
+
+| Couche | Mécanisme | Fichier concerné |
+|--------|-----------|-----------------|
+| **Filtre intrinsèque (URDF)** | `<collision>` retiré du `cargo_platform_link` → lien transparent au raycasting Gazebo | `urdf/robot_core.xacro` |
+| **Filtre logiciel** | Nœud `scan_to_scan_filter_chain` (`laser_filters`) masquant une boîte 1.30 × 0.80 m autour du robot | `config/laser_filter.yaml` |
+
+Le topic `/scan` (brut) reste disponible. Le topic `/scan_filtered` est produit par le filtre logiciel et doit être utilisé par Cartographer / Nav2.
+
+Dans **RViz**, deux displays sont disponibles :
+- 🔴 `/scan` — scan brut (rouge)
+- 🟢 `/scan_filtered` — obstacles externes uniquement (vert)
 

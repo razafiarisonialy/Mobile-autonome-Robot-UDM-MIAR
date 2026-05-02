@@ -12,8 +12,9 @@ def generate_launch_description():
     pkg_share = get_package_share_directory('industry_robot')
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
 
-    xacro_file = os.path.join(pkg_share, 'urdf', 'warehouse_bot.urdf.xacro')
-    world_file = os.path.join(pkg_share, 'worlds', 'warehouse.sdf')
+    xacro_file          = os.path.join(pkg_share, 'urdf', 'warehouse_bot.urdf.xacro')
+    world_file          = os.path.join(pkg_share, 'worlds', 'warehouse.sdf')
+    laser_filter_config = os.path.join(pkg_share, 'config', 'laser_filter.yaml')
     world_name = 'warehouse_world'  # doit correspondre à <world name="..."> dans warehouse.sdf
 
     # Génération du monde s'il n'existe pas
@@ -156,6 +157,30 @@ def generate_launch_description():
             output='screen'
         )
         nodes.append(robot_bridge)
+
+        # FILTRE LASER par robot — supprime les points à l'intérieur du robot
+        # Entrée : /{name}/scan  →  Sortie : /{name}/scan_filtered
+        # Le paramètre box_frame est surchargé ici (approche a) pour matcher
+        # les frames TF préfixées du multi-robot : {name}/base_link au lieu de base_link.
+        laser_filter = Node(
+            package='laser_filters',
+            executable='scan_to_scan_filter_chain',
+            name=f'{name}_laser_filter',
+            parameters=[
+                laser_filter_config,
+                {
+                    'use_sim_time': True,
+                    # Surcharge du frame pour matcher les TF préfixées du robot
+                    'filter1.params.box_frame': f'{name}/base_link',
+                }
+            ],
+            remappings=[
+                ('scan', f'/{name}/scan'),
+                ('scan_filtered', f'/{name}/scan_filtered'),
+            ],
+            output='screen'
+        )
+        nodes.append(laser_filter)
 
     # RViz
     rviz_config = os.path.join(pkg_share, 'rviz', 'multi_sim.rviz')

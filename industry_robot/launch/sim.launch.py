@@ -15,8 +15,9 @@ def generate_launch_description():
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
 
     xacro_file   = os.path.join(pkg_share, 'urdf', 'warehouse_bot.urdf.xacro')
-    bridge_config = os.path.join(pkg_share, 'config', 'bridge.yaml')
-    rviz_config   = os.path.join(pkg_share, 'rviz', 'view_robot.rviz')
+    bridge_config        = os.path.join(pkg_share, 'config', 'bridge.yaml')
+    laser_filter_config  = os.path.join(pkg_share, 'config', 'laser_filter.yaml')
+    rviz_config          = os.path.join(pkg_share, 'rviz', 'view_robot.rviz')
     world_file = os.path.join(pkg_share, 'worlds', 'warehouse.sdf')
 
     # Generation du monde SDF
@@ -100,6 +101,23 @@ def generate_launch_description():
         output='screen'
     )
 
+    # FILTRE LASER — supprime les points dans une boîte autour du robot
+    # Entrée : /scan  →  Sortie : /scan_filtered
+    laser_filter = Node(
+        package='laser_filters',
+        executable='scan_to_scan_filter_chain',
+        name='laser_filter',
+        parameters=[
+            laser_filter_config,
+            {'use_sim_time': True}
+        ],
+        remappings=[
+            ('scan', '/scan'),
+            ('scan_filtered', '/scan_filtered'),
+        ],
+        output='screen'
+    )
+
     # RVIZ2 — Visualisation du robot et des données capteurs
     rviz = Node(
         package='rviz2',
@@ -115,5 +133,6 @@ def generate_launch_description():
         joint_state_publisher,
         spawn_entity,
         bridge,
+        laser_filter,
         rviz,
     ])
