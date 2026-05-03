@@ -28,8 +28,10 @@ options = {
   trajectory_builder = TRAJECTORY_BUILDER,
 
   -- Frames TF
+  -- tracking_frame = imu_link car Cartographer exige que le frame IMU
+  -- soit colocalisé avec le tracking frame (norme translation < 1e-5).
   map_frame       = "map",
-  tracking_frame  = "base_footprint",
+  tracking_frame  = "imu_link",
   published_frame = "odom",
   odom_frame      = "odom",
 
