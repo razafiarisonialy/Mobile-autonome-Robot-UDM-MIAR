@@ -75,8 +75,9 @@ TRAJECTORY_BUILDER_2D.min_range             = 0.20
 TRAJECTORY_BUILDER_2D.max_range             = 10.0
 TRAJECTORY_BUILDER_2D.missing_data_ray_length = 9.0
 
--- Fusion IMU pour compenser les glissements lors des rotations
-TRAJECTORY_BUILDER_2D.use_imu_data         = true
+-- IMU désactivé : le topic /imu n'est pas reçu par Cartographer en sim time.
+-- L'odométrie DiffDrive + LiDAR suffisent pour le SLAM en entrepôt.
+TRAJECTORY_BUILDER_2D.use_imu_data         = false
 
 -- Filtre voxel : 0.05 m adapté à l'entrepôt (résolution carte 0.05 m)
 TRAJECTORY_BUILDER_2D.voxel_filter_size    = 0.05
