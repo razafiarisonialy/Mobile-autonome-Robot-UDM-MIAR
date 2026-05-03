@@ -41,8 +41,9 @@
     <gazebo reference="lidar_link">
         <material>Gazebo/Red</material>
         <sensor name="lidar" type="gpu_lidar">
+            <!-- Sensor pose is relative to lidar_link; the fixed joint already places lidar_link. -->
             <pose>0 0 0 0 0 0</pose>
-            <topic>scan</topic>
+            <topic>${topic_prefix}/scan</topic>
             <update_rate>10</update_rate>
             <gz_frame_id>${frame_prefix}lidar_link</gz_frame_id>
             <lidar>

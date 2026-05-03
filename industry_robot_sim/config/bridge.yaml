@@ -35,11 +35,11 @@
 # --- LiDAR 2D : Gazebo → ROS 2 ---
 # gz_frame_id non traité par Gazebo Harmonic : on force le frame_id ici.
 - ros_topic_name: "scan"
-  gz_topic_name: "/model/warehouse_bot/scan"
+  gz_topic_name: "/scan"
   ros_type_name: "sensor_msgs/msg/LaserScan"
   gz_type_name: "gz.msgs.LaserScan"
   direction: GZ_TO_ROS
-  ros_frame_id: "lidar_link"
+  frame_id: "lidar_link"
 
 # --- IMU : Gazebo → ROS 2 ---
 # gz_frame_id non traité : on force le frame_id imu_link ici.
@@ -48,7 +48,7 @@
   ros_type_name: "sensor_msgs/msg/Imu"
   gz_type_name: "gz.msgs.IMU"
   direction: GZ_TO_ROS
-  ros_frame_id: "imu_link"
+  frame_id: "imu_link"
 
 # --- Horloge simulée : Gazebo → ROS 2 ---
 - ros_topic_name: "clock"
