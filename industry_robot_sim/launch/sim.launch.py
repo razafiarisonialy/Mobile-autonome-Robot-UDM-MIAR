@@ -65,8 +65,8 @@ def generate_launch_description():
             '-topic', 'robot_description',
             '-name', 'warehouse_bot',
             '-x', '0.0',
-            '-y', '-10.0',
-            '-z', '0.3',
+            '-y', '0.0',
+            '-z', '0.0',
         ],
         output='screen'
     )
@@ -75,6 +75,7 @@ def generate_launch_description():
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
+        name='state_bridge',
         parameters=[{
             'config_file': bridge_config,
             'use_sim_time': True
