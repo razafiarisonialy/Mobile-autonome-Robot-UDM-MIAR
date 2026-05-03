@@ -9,20 +9,17 @@ from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
-    pkg_share = get_package_share_directory('industry_robot')
-    pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
+    pkg_description = get_package_share_directory('industry_robot_description')
+    pkg_sim         = get_package_share_directory('industry_robot_sim')
+    pkg_multi_sim   = get_package_share_directory('industry_robot_multi_sim')
+    pkg_ros_gz_sim  = get_package_share_directory('ros_gz_sim')
 
-    xacro_file = os.path.join(pkg_share, 'urdf', 'warehouse_bot.urdf.xacro')
-    world_file = os.path.join(pkg_share, 'worlds', 'warehouse.sdf')
-    world_name = 'warehouse_world'  # doit correspondre à <world name="..."> dans warehouse.sdf
-
-    # Génération du monde s'il n'existe pas
-    if not os.path.isfile(world_file):
-        scripts_dir = os.path.join(pkg_share, 'scripts', 'world')
-        sys.path.insert(0, scripts_dir)
-        from generate_warehouse import generate_warehouse_sdf
-        os.makedirs(os.path.join(pkg_share, 'worlds'), exist_ok=True)
-        generate_warehouse_sdf(4, 3, 4, world_file)
+    xacro_file          = os.path.join(pkg_description, 'urdf', 'warehouse_bot.urdf.xacro')
+    world_file          = os.path.join(pkg_multi_sim, 'worlds', 'warehouse.sdf')
+    laser_filter_config = os.path.join(pkg_description, 'config', 'laser_filter.yaml')
+    rviz_config         = os.path.join(pkg_multi_sim, 'rviz', 'multi_sim.rviz')
+    
+    world_name = 'warehouse_world'
 
     # Lancement de Gazebo
     gazebo = IncludeLaunchDescription(
@@ -45,7 +42,7 @@ def generate_launch_description():
     )
     nodes.append(clock_bridge)
 
-    # Définition des 4 robots (nom et position initiale)
+    # Définition des 4 robots
     robots = [
         {'name': 'robot1', 'x': '1.0', 'y': '3.0'},
         {'name': 'robot2', 'x': '1.0', 'y': '0.0'},
@@ -64,7 +61,7 @@ def generate_launch_description():
 
         # Groupe pour chaque robot
         robot_group = GroupAction([
-            # State Publisher avec frame_prefix
+            # State Publisher
             Node(
                 package='robot_state_publisher',
                 executable='robot_state_publisher',
@@ -81,9 +78,7 @@ def generate_launch_description():
                     ('/tf_static', '/tf_static'),
                 ]
             ),
-            # Joint State Publisher — garantit que RSP reçoit des joint_states pour les roues.
-            # source_list: utilise les vraies valeurs Gazebo si le bridge fonctionne,
-            # sinon publie des positions nulles (roues visibles mais sans rotation RViz).
+            # Joint State Publisher
             Node(
                 package='joint_state_publisher',
                 executable='joint_state_publisher',
@@ -116,8 +111,8 @@ def generate_launch_description():
                 executable='static_transform_publisher',
                 name=f'{name}_static_tf',
                 arguments=[
-                    robot['x'], robot['y'], '0',  # x y z
-                    '0', '0', '0',                # roll pitch yaw
+                    robot['x'], robot['y'], '0',
+                    '0', '0', '0',
                     'world', f'{name}/odom'
                 ],
                 output='screen'
@@ -125,22 +120,18 @@ def generate_launch_description():
         ])
         nodes.append(robot_group)
 
-        # Bridge par robot.
-        # JointState : Gazebo Harmonic JointStatePublisher publie sous le chemin world-scopé :
-        #   /world/{world_name}/model/{name}/joint_state  (gz.msgs.Model)
-        # On remapie vers /{name}/joint_states_gz pour que joint_state_publisher l'utilise.
+        # Bridge par robot (toujours via arguments ici, ou on pourrait utiliser un bridge_multi.yaml)
+        # Si on veut utiliser bridge_multi.yaml, il faudrait qu'il contienne tous les robots.
+        # Pour l'instant on garde les arguments pour la flexibilité du loop.
         robot_bridge = Node(
             package='ros_gz_bridge',
             executable='parameter_bridge',
             name=f'{name}_bridge',
             arguments=[
-                # DiffDrive topics (Gazebo /model/<name>/...)
                 f'/model/{name}/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist',
                 f'/model/{name}/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
                 f'/model/{name}/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-                # JointState — topic world-scopé de Gazebo Harmonic JointStatePublisher
                 f'/world/{world_name}/model/{name}/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
-                # Capteurs (model-scoped dans Gazebo)
                 f'/model/{name}/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
                 f'/model/{name}/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
             ],
@@ -157,8 +148,27 @@ def generate_launch_description():
         )
         nodes.append(robot_bridge)
 
+        # Filtre Laser
+        laser_filter = Node(
+            package='laser_filters',
+            executable='scan_to_scan_filter_chain',
+            name=f'{name}_laser_filter',
+            parameters=[
+                laser_filter_config,
+                {
+                    'use_sim_time': True,
+                    'filter1.params.box_frame': f'{name}/base_link',
+                }
+            ],
+            remappings=[
+                ('scan', f'/{name}/scan'),
+                ('scan_filtered', f'/{name}/scan_filtered'),
+            ],
+            output='screen'
+        )
+        nodes.append(laser_filter)
+
     # RViz
-    rviz_config = os.path.join(pkg_share, 'rviz', 'multi_sim.rviz')
     rviz = Node(
         package='rviz2',
         executable='rviz2',

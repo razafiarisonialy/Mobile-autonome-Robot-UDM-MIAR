@@ -38,15 +38,27 @@ Visualization Manager:
       Show Names: true
       Marker Scale: 0.3
 
-    # --- Données LiDAR (nuage de points 2D) ---
+    # --- Données LiDAR brutes (avant filtrage, en rouge) ---
     - Class: rviz_default_plugins/LaserScan
-      Name: LiDAR Scan
+      Name: LiDAR Scan (brut)
       Topic:
         Value: /scan
         Reliability Policy: Best Effort
       Size (m): 0.03
       Color Transformer: FlatColor
       Color: 255; 50; 50
+      Enabled: true
+      Queue Size: 5
+
+    # --- Scan filtré (obstacles externes uniquement, en vert) ---
+    - Class: rviz_default_plugins/LaserScan
+      Name: LiDAR Filtré
+      Topic:
+        Value: /scan_filtered
+        Reliability Policy: Best Effort
+      Size (m): 0.05
+      Color Transformer: FlatColor
+      Color: 0; 255; 0
       Enabled: true
       Queue Size: 5
 

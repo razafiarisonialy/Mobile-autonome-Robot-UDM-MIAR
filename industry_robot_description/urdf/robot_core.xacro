@@ -197,6 +197,9 @@
         <origin xyz="0 0 ${cargo_z_offset}" rpy="0 0 0"/>
     </joint>
 
+    <!-- NB: <collision> retiré du plateau cargo pour éviter la self-detection LiDAR.
+         Le plateau reste visible (visual) et conserve sa masse (inertial),
+         mais devient transparent au raycasting du gpu_lidar. -->
     <link name="cargo_platform_link">
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -205,12 +208,6 @@
             </geometry>
             <material name="light_grey"/>
         </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 0 0"/>
-            <geometry>
-                <box size="${cargo_length} ${cargo_width} ${cargo_height}"/>
-            </geometry>
-        </collision>
         <xacro:inertial_box mass="${cargo_mass}" x="${cargo_length}" y="${cargo_width}" z="${cargo_height}">
             <origin xyz="0 0 0" rpy="0 0 0"/>
         </xacro:inertial_box>

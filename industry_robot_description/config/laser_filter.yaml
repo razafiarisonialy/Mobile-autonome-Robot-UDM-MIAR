@@ -1,0 +1,28 @@
+# ================================================================
+# laser_filter.yaml — Filtre logiciel du scan LiDAR
+# Masque tous les points contenus dans une boîte autour du robot
+# afin d'éliminer toute self-detection résiduelle.
+# Utilisé conjointement avec le filtre intrinsèque URDF (Option 1)
+# pour une robustesse maximale, y compris sur robot réel.
+#
+# Boîte définie dans le repère base_link :
+#   x : [-0.65, 0.65]  → légèrement plus grand que la demi-longueur (0.50 m)
+#   y : [-0.40, 0.40]  → légèrement plus grand que la demi-largeur  (0.275 m)
+#   z : [-0.10, 0.80]  → couvre toute la hauteur du robot depuis le sol
+# Les points à l'intérieur de cette boîte sont supprimés (invert: false).
+# ================================================================
+
+scan_to_scan_filter_chain:
+  ros__parameters:
+    filter1:
+      type: laser_filters/LaserScanBoxFilter
+      name: filtre_self_detection
+      params:
+        box_frame: base_link
+        min_x: -0.65
+        max_x: 0.65
+        min_y: -0.40
+        max_y: 0.40
+        min_z: -0.10
+        max_z: 0.80
+        invert: false

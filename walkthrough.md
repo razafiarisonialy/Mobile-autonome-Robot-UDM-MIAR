@@ -1,114 +1,125 @@
-# Package ROS 2 `industry_robot` — Walkthrough complet
+# 📘 Guide Détaillé : Fonctionnement et Méthodologie
 
-## Vue d'ensemble
-
-Package ROS 2 Jazzy complet pour un robot mobile autonome (AMR), simulé sous Gazebo Harmonic. Design très fortement inspiré du robot industriel Effidence EffiBOT (4 grandes roues motrices, large plateau cargo, piliers robustes).
+Ce document explique en détail le fonctionnement technique, le flux de données et la méthodologie adoptée pour le développement de ce système de simulation.
 
 ---
 
-## Structure finale du package
+## 🛠️ Méthodologie de Développement
 
-```
-industry_robot/
-├── CMakeLists.txt                      # Build system avec install()
-├── package.xml                         # Manifeste avec toutes les dépendances
-├── urdf/
-│   ├── warehouse_bot.urdf.xacro        # Fichier principal (inclusions)
-│   ├── inertial_macros.xacro           # Macros d'inertie (box, cylinder, sphere)
-│   ├── robot_core.xacro                # Corps du robot (châssis, 4 roues, plateau...)
-│   ├── lidar.xacro                     # Capteur LiDAR 2D (gpu_lidar)
-│   ├── imu.xacro                       # Centrale inertielle
-│   └── gazebo_control.xacro            # Plugins DiffDrive (4 roues) + JointStatePublisher
-├── launch/
-│   ├── sim.launch.py                   # Simulation monde vide
-│   └── display.launch.py              # Visualisation URDF seule (RViz)
-├── config/
-│   └── bridge.yaml                     # Mapping topics Gazebo ↔ ROS 2
-└── rviz/
-    └── view_robot.rviz                # Config RViz (robot, TF, scan, odom)
-```
+La conception de ce projet a suivi une approche rigoureuse en 5 phases pour garantir un comportement physique réaliste et une architecture logicielle évolutive.
 
----
+### Phase 1 : Modélisation Physique et Visuelle (URDF/Xacro)
+- **Mise à l'échelle réelle** : Le robot a été conçu aux dimensions réelles d'un AMR industriel (100x55 cm).
+- **Précision Inertielle** : Chaque composant utilise des macros de calcul d'inertie. Une mauvaise inertie causerait des comportements erratiques (robot qui tremble ou s'envole).
+- **Modularité** : Utilisation de Xacro pour séparer le châssis, les roues et les capteurs, permettant de modifier un élément sans impacter les autres.
 
-## Corrections et améliorations apportées
+### Phase 2 : Configuration du Contrôle (Plugins Gazebo)
+- **Plugin DiffDrive** : Configuration des paramètres cinématiques (séparation des roues, rayon) pour correspondre exactement au modèle physique.
+- **Frottements (Friction)** : Ajustement des coefficients `mu1/mu2` des roues dans Gazebo pour permettre une traction efficace sans glissement excessif sur le sol de l'entrepôt.
 
-### Bugs corrigés et ajustements d'échelle
+### Phase 3 : Communication et Bridge
+- **Standardisation des Topics** : Utilisation de types ROS 2 standards (`geometry_msgs`, `sensor_msgs`) pour assurer la compatibilité avec Nav2 ou Cartographer.
+- **Optimisation du Bridge** : Configuration fine du `ros_gz_bridge` pour minimiser la latence des données LiDAR et IMU.
 
-| Problème | Avant | Après |
-|----------|-------|-------|
-| Nom du package dans les launch files | `warehouse_bot` | `industry_robot` |
-| package.xml manquait des dépendances | `urdf`, `xacro` seulement | + `ros_gz_sim`, `ros_gz_bridge`, `rviz2`, etc. |
-| Taille du châssis | 0.35×0.30×0.12 m | **1.00×0.55×0.30 m** (échelle réelle) |
-| Configuration des roues | 2 roues + 1 caster | **4 roues** (skid-steer) |
-| Rayon des roues | r=0.065 m | **r=0.125 m** |
-| Masse du châssis | 3.0 kg | **40.0 kg** (robot industriel lourd) |
-| base_joint z=0 (robot dans le sol) | z=0 fixe | **z=wheel_radius** (xacro property) |
-| Spawn z=0.15 (robot flottant) | z=0.15 | **z=0.0** |
-| Wheel separation | 0.33 m | **0.63 m** |
-| RViz Fixed Frame = base_footprint | Pas d'odom | **odom** (pour simulation) |
+### Phase 4 : Stratégie Multi-Robots
+- **Namespacing Strict** : Chaque instance de robot est isolée. La méthodologie repose sur l'injection dynamique du namespace dans l'URDF via des arguments Xacro.
+- **Gestion des TF** : Utilisation de `frame_prefix` dans `robot_state_publisher` pour que chaque robot ait son propre arbre de transformations (ex: `robot1/base_link` -> `robot1/odom`).
 
-### Améliorations esthétiques (style EffiBOT)
-
-| Élément ajouté | Description |
-|----------------|-------------|
-| **4 grandes roues** | Traction sur 4 roues, aspect massif |
-| **4 piliers de support** | Montants robustes reliant châssis → plateau cargo |
-| **Plateau cargo** | Grand plateau blanc au-dessus du châssis |
-| **Rails latéraux bleus** | Garde-corps décoratifs sur le plateau |
-| **Pare-chocs avant** | Barre de protection industrielle à l'avant |
-| **Phares LED** | 2 lumières jaunes sur le mât avant |
-| **Voyant LED status** | Indicateur vert d'opération sur le mât |
-| **Bouton E-Stop** | Arrêt d'urgence rouge (visuel décoratif) |
+### Organisation des Packages (Architecture ROS 2)
+Le projet suit une organisation multi-packages pour séparer les responsabilités :
+1.  **`_description`** : Les fichiers sources immuables du robot (URDF).
+2.  **`_sim`** : Les fichiers d'orchestration pour un déploiement standard.
+3.  **`_multi_sim`** : La couche d'abstraction pour la gestion de flotte.
 
 ---
 
-## Hiérarchie TF
+---
 
+## 🏗️ Architecture et Flux de Données
+
+Le système repose sur la communication entre **Gazebo Harmonic** (le moteur physique) et **ROS 2 Jazzy** (le cerveau du robot) via un pont nommé `ros_gz_bridge`.
+
+### Schéma du flux :
 ```mermaid
-graph TD
-    BF[base_footprint] --> BL[base_link]
-    BL --> CL[chassis_link]
-    BL --> FL[front_left_wheel_link]
-    BL --> FR[front_right_wheel_link]
-    BL --> RL[rear_left_wheel_link]
-    BL --> RR[rear_right_wheel_link]
-    CL --> CP[cargo_platform_link]
-    CL --> FM[front_mast_link]
-    CL --> IMU[imu_link]
-    CL --> FB[front_bumper_link]
-    FM --> LD[lidar_link]
-    FM --> ES[estop_link]
-    CP --> L_RAIL[left_rail_link]
-    CP --> R_RAIL[right_rail_link]
+graph LR
+    subgraph Gazebo_Harmonic [Simulateur Gazebo]
+        GZ_Phys[Physique & Collisions]
+        GZ_Sens[Capteurs LiDAR/IMU]
+    end
+
+    subgraph Bridge [ros_gz_bridge]
+        B_Vel[cmd_vel]
+        B_Odom[odom]
+        B_Sens[scan/imu]
+    end
+
+    subgraph ROS2 [ROS 2 Jazzy]
+        R_RSP[robot_state_publisher]
+        R_Filter[laser_filters]
+        R_RViz[RViz2 Visualization]
+    end
+
+    GZ_Phys <--> B_Vel <--> ROS2
+    GZ_Sens --> B_Sens --> R_Filter --> R_RViz
+    GZ_Phys --> B_Odom --> R_RViz
 ```
 
 ---
 
-## Budget des masses (~65 kg)
+## 2. Structure Modulaire de l'URDF (Xacro)
 
-| Composant | Masse (kg) |
-|-----------|------------|
-| Châssis | 40.00 |
-| Plateau cargo | 5.00 |
-| 4 Roues (4×3.0) | 12.00 |
-| Mât avant | 2.00 |
-| LiDAR | 0.12 |
-| Pare-chocs | 1.00 |
-| 4 piliers (4×0.2) | 0.80 |
-| 2 rails (2×0.5) | 1.00 |
-| IMU | 0.02 |
-| **Total** | **~61.94 kg** |
+L'URDF n'est pas un fichier unique, mais un assemblage de modules Xacro situés dans `industry_robot_description/urdf/` :
+
+1.  **`robot_core.xacro`** : Définit la géométrie visuelle et de collision (châssis, roues, plateau).
+2.  **`inertial_macros.xacro`** : Contient les formules mathématiques pour calculer l'inertie (indispensable pour que le robot ne s'envole pas ou ne s'enfonce pas).
+3.  **`lidar.xacro` & `imu.xacro`** : Ajoutent les capteurs virtuels au modèle avec leurs paramètres (portée, fréquence).
+4.  **`gazebo_control.xacro`** : Configure les plugins Gazebo (`diff_drive`) qui simulent les moteurs des roues et publient l'odométrie.
 
 ---
 
-## Topics bridgés (Gazebo ↔ ROS 2)
+## 3. Logique Multi-Robots et Namespacing
 
-| Topic | Type ROS 2 | Direction |
-|-------|-----------|-----------|
-| `/cmd_vel` | `Twist` | ROS → GZ |
-| `/odom` | `Odometry` | GZ → ROS |
-| `/tf` | `TFMessage` | GZ → ROS |
-| `/joint_states` | `JointState` | GZ → ROS |
-| `/scan` | `LaserScan` | GZ → ROS |
-| `/imu` | `Imu` | GZ → ROS |
-| `/clock` | `Clock` | GZ → ROS |
+C'est la partie la plus complexe du projet. Pour faire rouler 4 robots sans qu'ils ne se confondent, nous utilisons des **Namespaces** (`/robot1`, `/robot2`, etc.).
+
+### Comment ça marche ?
+-   **URDF Dynamique** : Le fichier `warehouse_bot.urdf.xacro` reçoit un argument `namespace`. Cela permet de préfixer les noms des liens (ex: `robot1/base_link`) pour que les transformations (TF) soient uniques.
+-   **Isolation des Topics** : Chaque robot possède son propre topic `/robot1/cmd_vel`, `/robot2/cmd_vel`, etc.
+-   **Bridge Multi-Instance** : Nous lançons soit un bridge global (`bridge_multi.yaml`), soit un bridge par robot qui fait la traduction entre les topics Gazebo (souvent sous la forme `/model/<name>/...`) et les topics ROS 2 namespacés.
+
+---
+
+## 4. Filtrage des Capteurs (Self-Detection)
+
+Comme le LiDAR est placé sur un mât au-dessus du châssis, il "voit" parfois les bords du robot lui-même.
+-   **Solution** : Le nœud `laser_filters` dans `industry_robot_description/config/laser_filter.yaml` définit une "boîte d'exclusion" autour du robot.
+-   **Résultat** : Les points laser qui touchent le robot sont supprimés avant d'arriver aux algorithmes de navigation.
+
+---
+
+## 5. Cycle d'Exécution (Step-by-Step)
+
+Quand vous lancez `ros2 launch industry_robot_sim sim.launch.py` :
+
+1.  **Génération URDF** : `xacro` compile les fichiers `.xacro` en un XML `robot_description` complet.
+2.  **Lancement Gazebo** : Le simulateur démarre et charge le monde `warehouse.sdf`.
+3.  **Apparition (Spawn)** : Le nœud `create` de Gazebo insère le modèle du robot dans le monde à la position (x,y,z) choisie.
+4.  **Publication d'État** : `robot_state_publisher` lit l'URDF et publie les positions relatives de toutes les pièces du robot.
+5.  **Activation du Pont** : `ros_gz_bridge` commence à synchroniser l'horloge simulée et à transmettre les données des capteurs.
+6.  **Visualisation** : RViz s'ouvre et affiche le robot tel qu'il est perçu par ROS 2.
+
+---
+
+## 🚀 Résumé des Commandes
+
+| Objectif | Commande |
+|----------|----------|
+| **Tout compiler** | `colcon build --symlink-install` |
+| **Simuler 1 robot** | `ros2 launch industry_robot_sim sim.launch.py` |
+| **Simuler 4 robots** | `ros2 launch industry_robot_multi_sim multi_sim.launch.py` |
+| **Contrôler (clavier)** | `ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/robot1/cmd_vel` |
+
+---
+
+## 🏁 Conclusion
+
+Cette méthodologie multi-packages assure une base solide pour le développement futur. En séparant la **description** (physique) de la **simulation** (environnement), le projet permet d'évoluer vers des algorithmes de navigation complexe (Nav2, SLAM) ou vers un déploiement sur robot réel avec un minimum de modifications.
