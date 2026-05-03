@@ -2,12 +2,24 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>industry_robot_slam</name>
-  <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <version>0.1.0</version>
+  <description>
+    Cartographie SLAM 2D pour le robot AMR d'entrepôt.
+    Réutilise le package turtlebot3_cartographer en injectant une configuration
+    Cartographer adaptée au robot industriel (LiDAR portée 10 m, châssis 1 × 0.55 m).
+  </description>
   <maintainer email="razafiarisonialy@gmail.com">root</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>industry_robot_description</depend>
+  <depend>industry_robot_sim</depend>
+  <depend>turtlebot3_cartographer</depend>
+  <depend>cartographer_ros</depend>
+  <depend>nav2_map_server</depend>
+  <depend>rviz2</depend>
+  <exec_depend>teleop_twist_keyboard</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
