@@ -27,6 +27,8 @@ endif()
 install(DIRECTORY
   urdf
   config
+  worlds
+  maps
   DESTINATION share/${PROJECT_NAME}
 )
 

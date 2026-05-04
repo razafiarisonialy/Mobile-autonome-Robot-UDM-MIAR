@@ -18,7 +18,7 @@ def generate_launch_description():
     bridge_config        = os.path.join(pkg_sim, 'config', 'bridge.yaml')
     laser_filter_config  = os.path.join(pkg_description, 'config', 'laser_filter.yaml')
     rviz_config          = os.path.join(pkg_sim, 'rviz', 'view_robot.rviz')
-    world_file = os.path.join(pkg_sim, 'worlds', 'warehouse.sdf')
+    world_file = os.path.join(pkg_description, 'worlds', 'warehouse.sdf')
 
     # Conversion Xacro → URDF
     robot_description = ParameterValue(
@@ -66,7 +66,7 @@ def generate_launch_description():
             '-name', 'warehouse_bot',
             '-x', '0.0',
             '-y', '0.0',
-            '-z', '0.0',
+            '-z', '0.25',
         ],
         output='screen'
     )
