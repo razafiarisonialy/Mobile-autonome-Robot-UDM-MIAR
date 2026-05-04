@@ -132,7 +132,7 @@ def generate_launch_description():
                 f'/model/{name}/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry',
                 f'/model/{name}/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
                 f'/world/{world_name}/model/{name}/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
-                f'/model/{name}/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
+                f'/{name}/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
                 f'/model/{name}/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
             ],
             remappings=[
@@ -140,7 +140,6 @@ def generate_launch_description():
                 (f'/model/{name}/odometry', f'/{name}/odom'),
                 (f'/model/{name}/tf', '/tf'),
                 (f'/world/{world_name}/model/{name}/joint_state', f'/{name}/joint_states_gz'),
-                (f'/model/{name}/scan', f'/{name}/scan'),
                 (f'/model/{name}/imu', f'/{name}/imu'),
             ],
             parameters=[{'use_sim_time': True}],

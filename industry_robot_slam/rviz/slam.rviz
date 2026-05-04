@@ -1,0 +1,101 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+
+Visualization Manager:
+  Class: ""
+  Displays:
+    # --- Grille de référence (50 cellules × 0.5 m = zone 25 m) ---
+    - Class: rviz_default_plugins/Grid
+      Name: Grille
+      Enabled: true
+      Cell Count: 50
+      Cell Size: 0.5
+      Color: 100; 100; 100
+      Line Style:
+        Value: Lines
+      Plane: XY
+      Plane Cell Count: 50
+
+    # --- Modèle 3D du robot ---
+    - Class: rviz_default_plugins/RobotModel
+      Name: Modèle Robot
+      Description Topic:
+        Value: /robot_description
+      Enabled: true
+      Visual Enabled: true
+      Collision Enabled: false
+      Alpha: 1.0
+
+    # --- Arbre des transformations TF ---
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: true
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Marker Scale: 0.3
+
+    # --- Carte d'occupation construite par Cartographer ---
+    - Class: rviz_default_plugins/Map
+      Name: Carte SLAM
+      Topic:
+        Value: /map
+        Reliability Policy: Reliable
+      Enabled: true
+      Alpha: 0.7
+      Color Scheme: map
+      Draw Behind: false
+
+    # --- Scan LiDAR filtré (obstacles externes, en vert clair) ---
+    - Class: rviz_default_plugins/LaserScan
+      Name: LiDAR Filtré
+      Topic:
+        Value: /scan_filtered
+        Reliability Policy: Best Effort
+      Size (m): 0.05
+      Color Transformer: FlatColor
+      Color: 0; 255; 0
+      Enabled: true
+      Queue Size: 5
+
+    # --- Trajectoire odométrique (flèches bleues, keep 100 poses) ---
+    - Class: rviz_default_plugins/Odometry
+      Name: Odométrie
+      Topic:
+        Value: /odom
+      Enabled: true
+      Keep: 100
+      Shape:
+        Alpha: 1.0
+        Axes Length: 0.3
+        Axes Radius: 0.01
+        Color: 0; 0; 255
+        Value: Arrow
+      Covariance:
+        Value: false
+      Position Tolerance: 0.1
+      Angle Tolerance: 0.1
+
+  Global Options:
+    Fixed Frame: odom
+    Frame Rate: 30
+    Background Color: 48; 48; 48
+
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+    - Class: rviz_default_plugins/Measure
+
+  Views:
+    Current:
+      Class: rviz_default_plugins/TopDownOrtho
+      Scale: 40
+      Near Clip Distance: 0.01
+      Far Clip Distance: 100.0
+      Target Frame: map
+      X: 0.0
+      Y: 0.0

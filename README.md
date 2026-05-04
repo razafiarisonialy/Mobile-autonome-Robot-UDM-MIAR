@@ -3,9 +3,19 @@
 [![ROS 2](https://img.shields.io/badge/ROS%202-Jazzy%20Jalisco-blue)](https://docs.ros.org/en/jazzy/)
 [![Gazebo](https://img.shields.io/badge/Gazebo-Harmonic-orange)](https://gazebosim.org/)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04%20LTS-purple)](https://ubuntu.com/)
+[![SLAM](https://img.shields.io/badge/SLAM-Cartographer-red)](https://google-cartographer-ros.readthedocs.io/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green)](LICENSE)
 
-Package ROS 2 complet pour la simulation d'un **robot mobile autonome (AMR)** destiné à un entrepôt de fabrication de cartons. Le robot est modélisé en Xacro modulaire, simulé sous Gazebo Harmonic, et communique via le bridge `ros_gz_bridge`.
+Workspace ROS 2 complet pour la simulation et la cartographie d'un **robot mobile autonome (AMR)** destiné à un entrepôt de fabrication de cartons. Le robot est modélisé en Xacro modulaire, simulé sous Gazebo Harmonic, et cartographie son environnement via **Cartographer SLAM**.
+
+### Packages du workspace
+
+| Package | Description |
+|---------|-------------|
+| `industry_robot_description` | URDF/Xacro du robot, configs partagées |
+| `industry_robot_sim` | Simulation mono-robot (Gazebo + bridge + filtrage LiDAR) |
+| `industry_robot_multi_sim` | Simulation multi-robots (flotte de 4 AMR) |
+| `industry_robot_slam` | SLAM 2D Cartographer (cartographie temps réel) |
 
 > **Design inspiré** du TurtleBot3 Waffle et du robot industriel [Effidence EffiBOT](https://effidence.com/).
 
@@ -68,7 +78,9 @@ sudo apt install -y \
   ros-jazzy-xacro \
   ros-jazzy-teleop-twist-keyboard \
   ros-jazzy-rviz2 \
-  ros-jazzy-laser-filters
+  ros-jazzy-laser-filters \
+  ros-jazzy-turtlebot3-cartographer \
+  ros-jazzy-nav2-map-server
 ```
 
 ### 4. Cloner et compiler le projet
@@ -110,6 +122,29 @@ Génère 4 robots avec isolation par namespaces (`/robot1` à `/robot4`).
 ros2 launch industry_robot_multi_sim multi_sim.launch.py
 ```
 
+### Option 3 — SLAM Cartographer (cartographie autonome)
+Lance le SLAM en temps réel **en complément** de la simulation mono-robot.
+
+**Terminal 1** — Simulation (si pas déjà lancée) :
+```bash
+ros2 launch industry_robot_sim sim.launch.py
+```
+
+**Terminal 2** — SLAM :
+```bash
+ros2 launch industry_robot_slam slam.launch.py
+```
+
+**Terminal 3** — Téléopération clavier :
+```bash
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
+```
+
+**Sauvegarder la carte** une fois l'exploration terminée :
+```bash
+ros2 run nav2_map_server map_saver_cli -f ~/ros2_ws/src/Mobile-autonome-Robot-UDM-MIAR/industry_robot_slam/maps/warehouse
+```
+
 ---
 
 ## 🎮 Piloter le Robot
@@ -140,6 +175,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/rob
 | `/joint_states` | `sensor_msgs/JointState` | GZ → ROS | Position des roues (via `joint_state_publisher`) |
 | `/tf` | `tf2_msgs/TFMessage` | GZ → ROS | Transformations TF |
 | `/clock` | `rosgraph_msgs/Clock` | GZ → ROS | Horloge simulée |
+| `/map` | `nav_msgs/OccupancyGrid` | SLAM → ROS | Carte d'occupation construite par Cartographer |
 
 ### Commandes utiles de diagnostic
 
@@ -158,6 +194,48 @@ ros2 topic echo /scan_filtered --once
 
 # Visualiser l'arbre TF complet
 ros2 run tf2_tools view_frames
+```
+
+---
+
+## 🗺️ SLAM — Cartographie de l'entrepôt
+
+Le package `industry_robot_slam` implémente la **cartographie 2D en temps réel** via [Cartographer](https://google-cartographer-ros.readthedocs.io/), en s'inspirant de l'architecture `turtlebot3_cartographer` tout en l'adaptant au robot industriel.
+
+### Architecture SLAM
+
+```
+/scan_filtered  ──►  cartographer_node  ──►  /map (OccupancyGrid)
+/imu            ──►  (SLAM en temps réel)    /submap_list
+/odom           ──►                          TF: map → odom
+```
+
+### Paramètres clés adaptés au robot industriel
+
+| Paramètre | TurtleBot3 | Industry Robot | Raison |
+|-----------|-----------|----------------|--------|
+| `max_range` LiDAR | 3.5 m | **10.0 m** | LiDAR portée étendue |
+| `missing_data_ray_length` | 3.0 m | **9.0 m** | Proportionnel à max_range |
+| `voxel_filter_size` | 0.05 m | **0.05 m** | Résolution carte identique |
+| `optimize_every_n_nodes` | 90 | **90** | Entrepôt = longues lignes droites |
+| `min_score` fermeture boucle | 0.55 | **0.65** | Plus sélectif pour éviter faux positifs |
+
+### Arguments du launch SLAM
+
+| Argument | Défaut | Description |
+|----------|--------|-------------|
+| `use_sim_time` | `true` | Horloge Gazebo |
+| `scan_topic` | `/scan_filtered` | Source LiDAR pour Cartographer |
+| `resolution` | `0.05` | Résolution carte en m/cell |
+| `publish_period_sec` | `1.0` | Période de publication de `/map` |
+| `use_rviz` | `true` | Ouvrir RViz avec la config SLAM |
+
+```bash
+# Exemple : utiliser le scan brut à la place du scan filtré (débogage)
+ros2 launch industry_robot_slam slam.launch.py scan_topic:=/scan
+
+# Exemple : désactiver RViz (mode headless)
+ros2 launch industry_robot_slam slam.launch.py use_rviz:=false
 ```
 
 ---

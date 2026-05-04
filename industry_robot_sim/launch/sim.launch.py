@@ -75,6 +75,7 @@ def generate_launch_description():
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
+        name='state_bridge',
         parameters=[{
             'config_file': bridge_config,
             'use_sim_time': True

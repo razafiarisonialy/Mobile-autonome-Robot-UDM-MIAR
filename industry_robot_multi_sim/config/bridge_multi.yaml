@@ -15,7 +15,7 @@
   direction: GZ_TO_ROS
 
 - ros_topic_name: "/robot1/scan"
-  gz_topic_name: "/model/robot1/scan"
+  gz_topic_name: "/robot1/scan"
   ros_type_name: "sensor_msgs/msg/LaserScan"
   gz_type_name: "gz.msgs.LaserScan"
   direction: GZ_TO_ROS
@@ -34,7 +34,7 @@
   direction: GZ_TO_ROS
 
 - ros_topic_name: "/robot2/scan"
-  gz_topic_name: "/model/robot2/scan"
+  gz_topic_name: "/robot2/scan"
   ros_type_name: "sensor_msgs/msg/LaserScan"
   gz_type_name: "gz.msgs.LaserScan"
   direction: GZ_TO_ROS
@@ -53,7 +53,7 @@
   direction: GZ_TO_ROS
 
 - ros_topic_name: "/robot3/scan"
-  gz_topic_name: "/model/robot3/scan"
+  gz_topic_name: "/robot3/scan"
   ros_type_name: "sensor_msgs/msg/LaserScan"
   gz_type_name: "gz.msgs.LaserScan"
   direction: GZ_TO_ROS
@@ -72,7 +72,7 @@
   direction: GZ_TO_ROS
 
 - ros_topic_name: "/robot4/scan"
-  gz_topic_name: "/model/robot4/scan"
+  gz_topic_name: "/robot4/scan"
   ros_type_name: "sensor_msgs/msg/LaserScan"
   gz_type_name: "gz.msgs.LaserScan"
   direction: GZ_TO_ROS
