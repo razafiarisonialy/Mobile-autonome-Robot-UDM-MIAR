@@ -12,7 +12,7 @@ Workspace ROS 2 complet pour la simulation et la cartographie d'un **robot mobil
 
 | Package | Description |
 |---------|-------------|
-| `industry_robot_description` | URDF/Xacro du robot, configs partagées |
+| `industry_robot_description` | **Source centrale** — URDF/Xacro, configs, monde Gazebo (`worlds/`), cartes SLAM (`maps/`) |
 | `industry_robot_sim` | Simulation mono-robot (Gazebo + bridge + filtrage LiDAR) |
 | `industry_robot_multi_sim` | Simulation multi-robots (flotte de 4 AMR) |
 | `industry_robot_slam` | SLAM 2D Cartographer (cartographie temps réel) |
@@ -142,7 +142,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 **Sauvegarder la carte** une fois l'exploration terminée :
 ```bash
-ros2 run nav2_map_server map_saver_cli -f ~/ros2_ws/src/Mobile-autonome-Robot-UDM-MIAR/industry_robot_slam/maps/warehouse
+ros2 run nav2_map_server map_saver_cli -f ~/ros2_ws/src/Mobile-autonome-Robot-UDM-MIAR/industry_robot_description/maps/warehouse
 ```
 
 ---
@@ -195,6 +195,20 @@ ros2 topic echo /scan_filtered --once
 # Visualiser l'arbre TF complet
 ros2 run tf2_tools view_frames
 ```
+
+---
+
+## 🏭 Monde Gazebo — Usine de Cartons
+
+Le fichier `industry_robot_description/worlds/warehouse.sdf` modélise une usine de fabrication de cartons (~40 m × 28 m) chargé par `sim.launch.py` et `multi_sim.launch.py`.
+
+| Zone | Rayonnages | Couleur sol |
+|------|-----------|-------------|
+| Matières premières (ouest) | `aws_robomaker_warehouse_ShelfD_01` | Bleu |
+| Semi-finis (centre) | `ctrazziwp/shelf` — fond plein, LiDAR-safe | Jaune |
+| Produits finis (est) | `aws_robomaker_warehouse_ShelfF_01` | Vert |
+
+Autres éléments : chariot élévateur (`OpenRobotics/Forklift`), palettes, colonnes structurelles (12), balises sol, flèches de circulation, zones de docking.
 
 ---
 

@@ -15,7 +15,7 @@ def generate_launch_description():
     pkg_ros_gz_sim  = get_package_share_directory('ros_gz_sim')
 
     xacro_file          = os.path.join(pkg_description, 'urdf', 'warehouse_bot.urdf.xacro')
-    world_file          = os.path.join(pkg_multi_sim, 'worlds', 'warehouse.sdf')
+    world_file          = os.path.join(pkg_description, 'worlds', 'warehouse.sdf')
     laser_filter_config = os.path.join(pkg_description, 'config', 'laser_filter.yaml')
     rviz_config         = os.path.join(pkg_multi_sim, 'rviz', 'multi_sim.rviz')
     
