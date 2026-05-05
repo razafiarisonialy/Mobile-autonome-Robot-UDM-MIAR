@@ -1,38 +1,15 @@
 <?xml version="1.0" ?>
-<!--
-  Cardboard Factory Warehouse — Gazebo Harmonic (gz-sim 8) / ROS 2 Jazzy
-  Shell   : Warehouse model (MovAi/Warehouse)
-  Layout  : ~28 m × 19 m usable interior, objects kept inside the shell
-  Zones   : Raw Materials (west) | Semi-Finished (centre) | Finished Goods (east)
-  Aisles  : wide central traffic lane + 4 m rack-to-rack spacing
-  Shelves : ShelfD (RM) | ctrazziwp/shelf (SF, solid bottom → LiDAR-safe) | ShelfF (FG)
-  Columns : 10 structural pillars — perimeter + zone boundaries, no centre obstruction
-  Robot   : spawned at runtime by ros_gz_sim create (see sim.launch.py)
--->
 <sdf version="1.9">
   <world name="warehouse_world">
 
-    <!-- Caméra initiale : vue plongeante sur l'ensemble de l'entrepôt -->
-    <gui fullscreen="0">
-      <camera name="user_camera">
-        <pose>0 -14 12 0 0.8 1.5708</pose>
-        <view_controller>orbit</view_controller>
-        <projection_type>perspective</projection_type>
-      </camera>
-    </gui>
-
-    <!-- ================================================================== -->
-    <!--  PHYSICS                                                            -->
-    <!-- ================================================================== -->
+    <!-- ===== Physique ===== -->
     <physics name="1ms" type="dart">
       <max_step_size>0.001</max_step_size>
       <real_time_factor>1.0</real_time_factor>
       <real_time_update_rate>1000</real_time_update_rate>
     </physics>
 
-    <!-- ================================================================== -->
-    <!--  SYSTEM PLUGINS (Gazebo Harmonic)                                  -->
-    <!-- ================================================================== -->
+    <!-- ===== Plugins Gazebo Harmonic ===== -->
     <plugin filename="gz-sim-physics-system"
             name="gz::sim::systems::Physics"/>
     <plugin filename="gz-sim-user-commands-system"
@@ -48,624 +25,134 @@
     <plugin filename="gz-sim-imu-system"
             name="gz::sim::systems::Imu"/>
 
-    <!-- ================================================================== -->
-    <!--  SCENE & LIGHTING                                                  -->
-    <!-- ================================================================== -->
-    <scene>
-      <ambient>0.35 0.35 0.35 1</ambient>
-      <background>0.55 0.58 0.62 1</background>
-      <shadows>true</shadows>
-      <grid>false</grid>
-    </scene>
-
+    <!-- ===== Éclairage ===== -->
     <light type="directional" name="sun">
       <cast_shadows>true</cast_shadows>
-      <pose>0 0 15 0 0 0</pose>
-      <diffuse>0.85 0.85 0.75 1</diffuse>
-      <specular>0.25 0.25 0.20 1</specular>
-      <direction>-0.4 0.2 -0.9</direction>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.3 0.1 -0.9</direction>
     </light>
 
-    <light type="point" name="lamp_w">
-      <pose>-12 0 5.5 0 0 0</pose>
-      <diffuse>1.0 0.96 0.88 1</diffuse>
-      <specular>0.1 0.1 0.1 1</specular>
-      <attenuation><range>20</range><linear>0.03</linear>
-        <constant>0.3</constant><quadratic>0.001</quadratic></attenuation>
-      <cast_shadows>false</cast_shadows>
-    </light>
-    <light type="point" name="lamp_cw">
-      <pose>-5 0 5.5 0 0 0</pose>
-      <diffuse>1.0 0.96 0.88 1</diffuse>
-      <specular>0.1 0.1 0.1 1</specular>
-      <attenuation><range>20</range><linear>0.03</linear>
-        <constant>0.3</constant><quadratic>0.001</quadratic></attenuation>
-      <cast_shadows>false</cast_shadows>
-    </light>
-    <light type="point" name="lamp_ce">
-      <pose>5 0 5.5 0 0 0</pose>
-      <diffuse>1.0 0.96 0.88 1</diffuse>
-      <specular>0.1 0.1 0.1 1</specular>
-      <attenuation><range>20</range><linear>0.03</linear>
-        <constant>0.3</constant><quadratic>0.001</quadratic></attenuation>
-      <cast_shadows>false</cast_shadows>
-    </light>
-    <light type="point" name="lamp_e">
-      <pose>12 0 5.5 0 0 0</pose>
-      <diffuse>1.0 0.96 0.88 1</diffuse>
-      <specular>0.1 0.1 0.1 1</specular>
-      <attenuation><range>20</range><linear>0.03</linear>
-        <constant>0.3</constant><quadratic>0.001</quadratic></attenuation>
-      <cast_shadows>false</cast_shadows>
-    </light>
-
-    <!-- ================================================================== -->
-    <!--  BUILDING SHELL — MovAi Warehouse model (scale 1:1)               -->
-    <!-- ================================================================== -->
+    <!-- ===== Coque de l'entrepôt (sol, murs, toit) ===== -->
     <include>
       <name>Warehouse_Shell</name>
-      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/Warehouse</uri>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Distribution_Warehouse</uri>
       <static>true</static>
-      <pose>0 0 -0.04 0 0 0</pose>
+      <pose>0 0 0 0 0 0</pose>
     </include>
 
-    <!-- Thin collision floor overlay -->
-    <model name="floor_collision">
-      <static>true</static>
-      <pose>0 0 -0.015 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
-          <geometry><box><size>32 22 0.03</size></box></geometry>
-          <surface>
-            <friction><ode><mu>0.8</mu><mu2>0.8</mu2></ode></friction>
-          </surface>
-        </collision>
-      </link>
-    </model>
-
-    <!-- ================================================================== -->
-    <!--  ZONE FLOOR OVERLAYS                                               -->
-    <!--  Raw Materials  : blue   (x −12.5 … −5.8)                         -->
-    <!--  Semi-Finished  : yellow (x  −5.8 … +5.8)                         -->
-    <!--  Finished Goods : green  (x  +5.8 … +12.5)                        -->
-    <!-- ================================================================== -->
-    <model name="zone_raw_materials">
-      <static>true</static>
-      <pose>-9.15 0 0.002 0 0 0</pose>
-      <link name="link">
-        <visual name="visual">
-          <geometry><box><size>6.7 18 0.002</size></box></geometry>
-          <material>
-            <ambient>0.18 0.28 0.70 0.30</ambient>
-            <diffuse>0.18 0.28 0.70 0.30</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="zone_semi_finished">
-      <static>true</static>
-      <pose>0 0 0.002 0 0 0</pose>
-      <link name="link">
-        <visual name="visual">
-          <geometry><box><size>11.6 18 0.002</size></box></geometry>
-          <material>
-            <ambient>0.72 0.62 0.05 0.25</ambient>
-            <diffuse>0.72 0.62 0.05 0.25</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <model name="zone_finished_goods">
-      <static>true</static>
-      <pose>9.15 0 0.002 0 0 0</pose>
-      <link name="link">
-        <visual name="visual">
-          <geometry><box><size>6.7 18 0.002</size></box></geometry>
-          <material>
-            <ambient>0.15 0.62 0.18 0.30</ambient>
-            <diffuse>0.15 0.62 0.18 0.30</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <!-- ================================================================== -->
-    <!--  STRUCTURAL COLUMNS (10 pillars, 0.28×0.28 m × 6 m)               -->
-    <!--  West/East perimeter : x = ±12.5, y = −9 / 0 / +9                 -->
-    <!--  Zone boundaries     : x = ±5.8, y = −9 / +9                      -->
-    <!--  Centre (x = 0) supprimé — évite d'obstruer le corridor central    -->
-    <!-- ================================================================== -->
-
-    <!-- West colonnade -->
-    <model name="col_w_s"><static>true</static><pose>-12.5 -9 3 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.28 0.28 6</size></box></geometry>
-          <material><ambient>0.30 0.30 0.32 1</ambient><diffuse>0.32 0.32 0.35 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.28 0.28 6</size></box></geometry></collision>
-      </link>
-    </model>
-    <model name="col_w_c"><static>true</static><pose>-12.5 0 3 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.28 0.28 6</size></box></geometry>
-          <material><ambient>0.30 0.30 0.32 1</ambient><diffuse>0.32 0.32 0.35 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.28 0.28 6</size></box></geometry></collision>
-      </link>
-    </model>
-    <model name="col_w_n"><static>true</static><pose>-12.5 9 3 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.28 0.28 6</size></box></geometry>
-          <material><ambient>0.30 0.30 0.32 1</ambient><diffuse>0.32 0.32 0.35 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.28 0.28 6</size></box></geometry></collision>
-      </link>
-    </model>
-
-    <!-- Zone A–B boundary (x = −5.8) -->
-    <model name="col_ab_s"><static>true</static><pose>-5.8 -9 3 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.28 0.28 6</size></box></geometry>
-          <material><ambient>0.30 0.30 0.32 1</ambient><diffuse>0.32 0.32 0.35 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.28 0.28 6</size></box></geometry></collision>
-      </link>
-    </model>
-    <model name="col_ab_n"><static>true</static><pose>-5.8 9 3 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.28 0.28 6</size></box></geometry>
-          <material><ambient>0.30 0.30 0.32 1</ambient><diffuse>0.32 0.32 0.35 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.28 0.28 6</size></box></geometry></collision>
-      </link>
-    </model>
-
-    <!-- Zone C–D boundary (x = +5.8) -->
-    <model name="col_cd_s"><static>true</static><pose>5.8 -9 3 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.28 0.28 6</size></box></geometry>
-          <material><ambient>0.30 0.30 0.32 1</ambient><diffuse>0.32 0.32 0.35 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.28 0.28 6</size></box></geometry></collision>
-      </link>
-    </model>
-    <model name="col_cd_n"><static>true</static><pose>5.8 9 3 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.28 0.28 6</size></box></geometry>
-          <material><ambient>0.30 0.30 0.32 1</ambient><diffuse>0.32 0.32 0.35 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.28 0.28 6</size></box></geometry></collision>
-      </link>
-    </model>
-
-    <!-- East colonnade -->
-    <model name="col_e_s"><static>true</static><pose>12.5 -9 3 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.28 0.28 6</size></box></geometry>
-          <material><ambient>0.30 0.30 0.32 1</ambient><diffuse>0.32 0.32 0.35 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.28 0.28 6</size></box></geometry></collision>
-      </link>
-    </model>
-    <model name="col_e_c"><static>true</static><pose>12.5 0 3 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.28 0.28 6</size></box></geometry>
-          <material><ambient>0.30 0.30 0.32 1</ambient><diffuse>0.32 0.32 0.35 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.28 0.28 6</size></box></geometry></collision>
-      </link>
-    </model>
-    <model name="col_e_n"><static>true</static><pose>12.5 9 3 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.28 0.28 6</size></box></geometry>
-          <material><ambient>0.30 0.30 0.32 1</ambient><diffuse>0.32 0.32 0.35 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.28 0.28 6</size></box></geometry></collision>
-      </link>
-    </model>
-
-    <!-- ================================================================== -->
-    <!--  STORAGE RACKS                                                     -->
-    <!--  Organised warehouse layout with a clear east-west traffic lane.   -->
-    <!--    Raw Materials : x = −11 / −7.5                                 -->
-    <!--    Semi-Finished : x = −3.5 / +3.5                                -->
-    <!--    Finished Goods: x = +7.5 / +11                                 -->
-    <!--  Shelves are kept away from y = 0 to leave a wide central aisle.   -->
-    <!-- ================================================================== -->
-
-    <!-- Raw Materials racks -->
-    <include><name>Rack_AW_0</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
-      <static>true</static><pose>-11 -7.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_AW_1</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
-      <static>true</static><pose>-11 -3.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_AW_3</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
-      <static>true</static><pose>-11  3.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_AW_4</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
-      <static>true</static><pose>-11  7.2 0 0 0 1.5708</pose></include>
-
-    <include><name>Rack_AE_0</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
-      <static>true</static><pose>-7.5 -7.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_AE_1</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
-      <static>true</static><pose>-7.5 -3.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_AE_3</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
-      <static>true</static><pose>-7.5  3.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_AE_4</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
-      <static>true</static><pose>-7.5  7.2 0 0 0 1.5708</pose></include>
-
-    <!-- Semi-Finished racks -->
-    <include><name>Rack_BW_0</name>
-      <uri>https://fuel.gazebosim.org/1.0/ctrazziwp/models/shelf</uri>
-      <static>true</static><pose>-3.5 -7.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_BW_1</name>
-      <uri>https://fuel.gazebosim.org/1.0/ctrazziwp/models/shelf</uri>
-      <static>true</static><pose>-3.5 -3.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_BW_3</name>
-      <uri>https://fuel.gazebosim.org/1.0/ctrazziwp/models/shelf</uri>
-      <static>true</static><pose>-3.5  3.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_BW_4</name>
-      <uri>https://fuel.gazebosim.org/1.0/ctrazziwp/models/shelf</uri>
-      <static>true</static><pose>-3.5  7.2 0 0 0 1.5708</pose></include>
-
-    <include><name>Rack_CE_0</name>
-      <uri>https://fuel.gazebosim.org/1.0/ctrazziwp/models/shelf</uri>
-      <static>true</static><pose>3.5 -7.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_CE_1</name>
-      <uri>https://fuel.gazebosim.org/1.0/ctrazziwp/models/shelf</uri>
-      <static>true</static><pose>3.5 -3.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_CE_3</name>
-      <uri>https://fuel.gazebosim.org/1.0/ctrazziwp/models/shelf</uri>
-      <static>true</static><pose>3.5  3.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_CE_4</name>
-      <uri>https://fuel.gazebosim.org/1.0/ctrazziwp/models/shelf</uri>
-      <static>true</static><pose>3.5  7.2 0 0 0 1.5708</pose></include>
-
-    <!-- Finished Goods racks -->
-    <include><name>Rack_DW_0</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
-      <static>true</static><pose>7.5 -7.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_DW_1</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
-      <static>true</static><pose>7.5 -3.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_DW_3</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
-      <static>true</static><pose>7.5  3.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_DW_4</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
-      <static>true</static><pose>7.5  7.2 0 0 0 1.5708</pose></include>
-
-    <include><name>Rack_DE_0</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
-      <static>true</static><pose>11 -7.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_DE_1</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
-      <static>true</static><pose>11 -3.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_DE_3</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
-      <static>true</static><pose>11  3.2 0 0 0 1.5708</pose></include>
-    <include><name>Rack_DE_4</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
-      <static>true</static><pose>11  7.2 0 0 0 1.5708</pose></include>
-
-    <!-- ================================================================== -->
-    <!--  PALLET STACKS                                                     -->
-    <!-- ================================================================== -->
-
-    <!-- Raw Materials — stock entrant côté ouest -->
-    <include><name>Pallet_RM_0</name>
-      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
-      <static>true</static><pose>-12 -6.2 0 0 0 0</pose></include>
-    <include><name>Pallet_RM_1</name>
-      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
-      <static>true</static><pose>-12 -4.7 0 0 0 0</pose></include>
-    <include><name>Pallet_RM_2</name>
-      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
-      <static>true</static><pose>-12  4.7 0 0 0 0</pose></include>
-    <include><name>Pallet_RM_3</name>
-      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
-      <static>true</static><pose>-12  6.2 0 0 0 0</pose></include>
-
-    <!-- Semi-Finished — stock en cours côté allées -->
-    <include><name>Pallet_SF_0</name>
-      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
-      <static>true</static><pose>-2.2 -8.4 0 0 0 1.5708</pose></include>
-    <include><name>Pallet_SF_1</name>
-      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
-      <static>true</static><pose> 2.2  8.4 0 0 0 1.5708</pose></include>
-
-    <!-- Finished Goods — stock sortant côté est -->
-    <include><name>Pallet_FG_0</name>
-      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
-      <static>true</static><pose>12 -6.2 0 0 0 0</pose></include>
-    <include><name>Pallet_FG_1</name>
-      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
-      <static>true</static><pose>12 -4.7 0 0 0 0</pose></include>
-    <include><name>Pallet_FG_2</name>
-      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
-      <static>true</static><pose>12  4.7 0 0 0 0</pose></include>
-    <include><name>Pallet_FG_3</name>
-      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
-      <static>true</static><pose>12  6.2 0 0 0 0</pose></include>
-
-    <!-- ================================================================== -->
-    <!--  PARKED FORKLIFT                                                   -->
-    <!-- ================================================================== -->
+    <!-- Rack Shelf_R0_C0 -->
     <include>
-      <name>Forklift_Parked</name>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Forklift</uri>
+      <name>Shelf_R0_C0</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
       <static>true</static>
-      <pose>-10.2 1.8 0 0 0 1.5708</pose>
+      <pose>-9.75 -6.0 0 0 0 1.5708</pose>
     </include>
-
-    <!-- ================================================================== -->
-    <!--  CARDBOARD BOX STACKS (inline geometry, kept inside shell)         -->
-    <!-- ================================================================== -->
-    <model name="boxes_rm_0"><static>true</static><pose>-12 -8.3 0.65 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>1.2 1.0 1.3</size></box></geometry>
-          <material><ambient>0.79 0.60 0.28 1</ambient><diffuse>0.79 0.60 0.28 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>1.2 1.0 1.3</size></box></geometry></collision>
-      </link>
-    </model>
-    <model name="boxes_rm_1"><static>true</static><pose>-6.2 -8.3 0.65 0 0 0.2</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>1.0 1.2 1.1</size></box></geometry>
-          <material><ambient>0.79 0.60 0.28 1</ambient><diffuse>0.79 0.60 0.28 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>1.0 1.2 1.1</size></box></geometry></collision>
-      </link>
-    </model>
-    <model name="boxes_fg_0"><static>true</static><pose>12 -8.3 0.65 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>1.2 1.0 1.4</size></box></geometry>
-          <material><ambient>0.72 0.52 0.22 1</ambient><diffuse>0.72 0.52 0.22 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>1.2 1.0 1.4</size></box></geometry></collision>
-      </link>
-    </model>
-    <model name="boxes_fg_1"><static>true</static><pose>6.2  8.3 0.65 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>1.2 1.0 1.4</size></box></geometry>
-          <material><ambient>0.72 0.52 0.22 1</ambient><diffuse>0.72 0.52 0.22 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>1.2 1.0 1.4</size></box></geometry></collision>
-      </link>
-    </model>
-    <model name="boxes_fg_2"><static>true</static><pose>12  2.6  0.65 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.9 1.5 1.2</size></box></geometry>
-          <material><ambient>0.72 0.52 0.22 1</ambient><diffuse>0.72 0.52 0.22 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.9 1.5 1.2</size></box></geometry></collision>
-      </link>
-    </model>
-
-    <!-- ================================================================== -->
-    <!--  SAFETY BARRIERS — bollards jaunes + rails aux x = ±5.8           -->
-    <!-- ================================================================== -->
-
-    <!-- x = −5.8 (RM → SF), central traffic lane kept open -->
-    <model name="boll_rm_sf_0"><static>true</static><pose>-5.8 -7.8 0.5 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><cylinder><radius>0.07</radius><length>1.0</length></cylinder></geometry>
-          <material><ambient>1.0 0.78 0.0 1</ambient><diffuse>1.0 0.78 0.0 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><cylinder><radius>0.07</radius><length>1.0</length></cylinder></geometry></collision>
-      </link>
-    </model>
-    <model name="boll_rm_sf_1"><static>true</static><pose>-5.8 -2.5 0.5 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><cylinder><radius>0.07</radius><length>1.0</length></cylinder></geometry>
-          <material><ambient>1.0 0.78 0.0 1</ambient><diffuse>1.0 0.78 0.0 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><cylinder><radius>0.07</radius><length>1.0</length></cylinder></geometry></collision>
-      </link>
-    </model>
-    <model name="boll_rm_sf_2"><static>true</static><pose>-5.8  7.8 0.5 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><cylinder><radius>0.07</radius><length>1.0</length></cylinder></geometry>
-          <material><ambient>1.0 0.78 0.0 1</ambient><diffuse>1.0 0.78 0.0 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><cylinder><radius>0.07</radius><length>1.0</length></cylinder></geometry></collision>
-      </link>
-    </model>
-
-    <model name="rail_rm_sf_s"><static>true</static><pose>-5.8 -8.8 0.12 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.12 2.0 0.08</size></box></geometry>
-          <material><ambient>1.0 0.78 0.0 1</ambient><diffuse>1.0 0.78 0.0 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.12 2.0 0.08</size></box></geometry></collision>
-      </link>
-    </model>
-    <model name="rail_rm_sf_n"><static>true</static><pose>-5.8  8.8 0.12 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.12 2.0 0.08</size></box></geometry>
-          <material><ambient>1.0 0.78 0.0 1</ambient><diffuse>1.0 0.78 0.0 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.12 2.0 0.08</size></box></geometry></collision>
-      </link>
-    </model>
-
-    <!-- x = +5.8 (SF → FG), central traffic lane kept open -->
-    <model name="boll_sf_fg_0"><static>true</static><pose>5.8 -7.8 0.5 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><cylinder><radius>0.07</radius><length>1.0</length></cylinder></geometry>
-          <material><ambient>1.0 0.78 0.0 1</ambient><diffuse>1.0 0.78 0.0 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><cylinder><radius>0.07</radius><length>1.0</length></cylinder></geometry></collision>
-      </link>
-    </model>
-    <model name="boll_sf_fg_1"><static>true</static><pose>5.8 -2.5 0.5 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><cylinder><radius>0.07</radius><length>1.0</length></cylinder></geometry>
-          <material><ambient>1.0 0.78 0.0 1</ambient><diffuse>1.0 0.78 0.0 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><cylinder><radius>0.07</radius><length>1.0</length></cylinder></geometry></collision>
-      </link>
-    </model>
-    <model name="boll_sf_fg_2"><static>true</static><pose>5.8  7.8 0.5 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><cylinder><radius>0.07</radius><length>1.0</length></cylinder></geometry>
-          <material><ambient>1.0 0.78 0.0 1</ambient><diffuse>1.0 0.78 0.0 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><cylinder><radius>0.07</radius><length>1.0</length></cylinder></geometry></collision>
-      </link>
-    </model>
-
-    <model name="rail_sf_fg_s"><static>true</static><pose>5.8 -8.8 0.12 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.12 2.0 0.08</size></box></geometry>
-          <material><ambient>1.0 0.78 0.0 1</ambient><diffuse>1.0 0.78 0.0 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.12 2.0 0.08</size></box></geometry></collision>
-      </link>
-    </model>
-    <model name="rail_sf_fg_n"><static>true</static><pose>5.8  8.8 0.12 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.12 2.0 0.08</size></box></geometry>
-          <material><ambient>1.0 0.78 0.0 1</ambient><diffuse>1.0 0.78 0.0 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.12 2.0 0.08</size></box></geometry></collision>
-      </link>
-    </model>
-
-    <!-- ================================================================== -->
-    <!--  FLOOR MARKINGS                                                    -->
-    <!-- ================================================================== -->
-
-    <!-- Waypoint discs -->
-    <model name="wp0_home"><static>true</static><pose>0 0 0.003 0 0 0</pose>
-      <link name="link"><visual name="v">
-        <geometry><cylinder><radius>0.32</radius><length>0.002</length></cylinder></geometry>
-        <material><ambient>0.0 0.85 0.12 1</ambient><diffuse>0.0 0.85 0.12 1</diffuse></material>
-      </visual></link>
-    </model>
-
-    <model name="wp1_rm_dock"><static>true</static><pose>-11.2 0 0.003 0 0 0</pose>
-      <link name="link"><visual name="v">
-        <geometry><cylinder><radius>0.32</radius><length>0.002</length></cylinder></geometry>
-        <material><ambient>0.12 0.32 1.0 1</ambient><diffuse>0.12 0.32 1.0 1</diffuse></material>
-      </visual></link>
-    </model>
-
-    <model name="wp2_sf_w"><static>true</static><pose>-3.5 0 0.003 0 0 0</pose>
-      <link name="link"><visual name="v">
-        <geometry><cylinder><radius>0.32</radius><length>0.002</length></cylinder></geometry>
-        <material><ambient>1.0 0.90 0.0 1</ambient><diffuse>1.0 0.90 0.0 1</diffuse></material>
-      </visual></link>
-    </model>
-
-    <model name="wp3_sf_e"><static>true</static><pose>3.5 0 0.003 0 0 0</pose>
-      <link name="link"><visual name="v">
-        <geometry><cylinder><radius>0.32</radius><length>0.002</length></cylinder></geometry>
-        <material><ambient>1.0 0.90 0.0 1</ambient><diffuse>1.0 0.90 0.0 1</diffuse></material>
-      </visual></link>
-    </model>
-
-    <model name="wp4_fg_dock"><static>true</static><pose>11.2 0 0.003 0 0 0</pose>
-      <link name="link"><visual name="v">
-        <geometry><cylinder><radius>0.32</radius><length>0.002</length></cylinder></geometry>
-        <material><ambient>0.22 0.95 0.38 1</ambient><diffuse>0.22 0.95 0.38 1</diffuse></material>
-      </visual></link>
-    </model>
-
-    <model name="wp5_charging"><static>true</static><pose>0 8.6 0.003 0 0 0</pose>
-      <link name="link"><visual name="v">
-        <geometry><cylinder><radius>0.32</radius><length>0.002</length></cylinder></geometry>
-        <material><ambient>1.0 0.50 0.0 1</ambient><diffuse>1.0 0.50 0.0 1</diffuse></material>
-      </visual></link>
-    </model>
-
-    <!-- Lane divider (corridor central, clear east-west route) -->
-    <model name="lane_divider"><static>true</static><pose>0 0 0.003 0 0 0</pose>
-      <link name="link"><visual name="v">
-        <geometry><box><size>24 0.07 0.002</size></box></geometry>
-        <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse></material>
-      </visual></link>
-    </model>
-
-    <!-- Flèche sens est (y = +1.3) -->
-    <model name="arr_e_shaft"><static>true</static><pose>0 1.3 0.003 0 0 0</pose>
-      <link name="link"><visual name="v">
-        <geometry><box><size>3.5 0.14 0.002</size></box></geometry>
-        <material><ambient>1.0 0.90 0.0 1</ambient><diffuse>1.0 0.90 0.0 1</diffuse></material>
-      </visual></link>
-    </model>
-    <model name="arr_e_h1"><static>true</static><pose>1.9 1.3 0.003 0 0 0.7854</pose>
-      <link name="link"><visual name="v">
-        <geometry><box><size>0.55 0.14 0.002</size></box></geometry>
-        <material><ambient>1.0 0.90 0.0 1</ambient><diffuse>1.0 0.90 0.0 1</diffuse></material>
-      </visual></link>
-    </model>
-    <model name="arr_e_h2"><static>true</static><pose>1.9 1.3 0.003 0 0 -0.7854</pose>
-      <link name="link"><visual name="v">
-        <geometry><box><size>0.55 0.14 0.002</size></box></geometry>
-        <material><ambient>1.0 0.90 0.0 1</ambient><diffuse>1.0 0.90 0.0 1</diffuse></material>
-      </visual></link>
-    </model>
-
-    <!-- Flèche sens ouest (y = −1.3) -->
-    <model name="arr_w_shaft"><static>true</static><pose>0 -1.3 0.003 0 0 0</pose>
-      <link name="link"><visual name="v">
-        <geometry><box><size>3.5 0.14 0.002</size></box></geometry>
-        <material><ambient>1.0 0.90 0.0 1</ambient><diffuse>1.0 0.90 0.0 1</diffuse></material>
-      </visual></link>
-    </model>
-    <model name="arr_w_h1"><static>true</static><pose>-1.9 -1.3 0.003 0 0 2.3562</pose>
-      <link name="link"><visual name="v">
-        <geometry><box><size>0.55 0.14 0.002</size></box></geometry>
-        <material><ambient>1.0 0.90 0.0 1</ambient><diffuse>1.0 0.90 0.0 1</diffuse></material>
-      </visual></link>
-    </model>
-    <model name="arr_w_h2"><static>true</static><pose>-1.9 -1.3 0.003 0 0 -2.3562</pose>
-      <link name="link"><visual name="v">
-        <geometry><box><size>0.55 0.14 0.002</size></box></geometry>
-        <material><ambient>1.0 0.90 0.0 1</ambient><diffuse>1.0 0.90 0.0 1</diffuse></material>
-      </visual></link>
-    </model>
-
-    <!-- Zones de docking -->
-    <model name="dock_rm"><static>true</static><pose>-11.2 0 0.003 0 0 0</pose>
-      <link name="link"><visual name="v">
-        <geometry><box><size>2.2 2.2 0.002</size></box></geometry>
-        <material><ambient>0.12 0.32 1.0 0.55</ambient><diffuse>0.12 0.32 1.0 0.55</diffuse></material>
-      </visual></link>
-    </model>
-    <model name="dock_fg"><static>true</static><pose>11.2 0 0.003 0 0 0</pose>
-      <link name="link"><visual name="v">
-        <geometry><box><size>2.2 2.2 0.002</size></box></geometry>
-        <material><ambient>0.22 0.95 0.38 0.55</ambient><diffuse>0.22 0.95 0.38 0.55</diffuse></material>
-      </visual></link>
-    </model>
-    <model name="dock_charge"><static>true</static><pose>0 8.6 0.003 0 0 0</pose>
-      <link name="link"><visual name="v">
-        <geometry><box><size>1.6 1.6 0.002</size></box></geometry>
-        <material><ambient>1.0 0.50 0.0 0.55</ambient><diffuse>1.0 0.50 0.0 0.55</diffuse></material>
-      </visual></link>
-    </model>
-
-    <!-- ================================================================== -->
-    <!--  CHARGING STATION KIOSK                                            -->
-    <!-- ================================================================== -->
-    <model name="charging_kiosk"><static>true</static><pose>-0.8 8.6 0.45 0 0 0</pose>
-      <link name="link">
-        <visual name="v"><geometry><box><size>0.35 0.28 0.9</size></box></geometry>
-          <material><ambient>0.12 0.12 0.78 1</ambient><diffuse>0.18 0.18 0.82 1</diffuse></material>
-        </visual>
-        <collision name="c"><geometry><box><size>0.35 0.28 0.9</size></box></geometry></collision>
-      </link>
-    </model>
-
+    <!-- Rack Shelf_R0_C1 -->
+    <include>
+      <name>Shelf_R0_C1</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfE_01</uri>
+      <static>true</static>
+      <pose>-9.75 0.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R0_C2 -->
+    <include>
+      <name>Shelf_R0_C2</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
+      <static>true</static>
+      <pose>-9.75 6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R1_C0 -->
+    <include>
+      <name>Shelf_R1_C0</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
+      <static>true</static>
+      <pose>-3.25 -6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R1_C1 -->
+    <include>
+      <name>Shelf_R1_C1</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfE_01</uri>
+      <static>true</static>
+      <pose>-3.25 0.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R1_C2 -->
+    <include>
+      <name>Shelf_R1_C2</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
+      <static>true</static>
+      <pose>-3.25 6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R2_C0 -->
+    <include>
+      <name>Shelf_R2_C0</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
+      <static>true</static>
+      <pose>3.25 -6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R2_C1 -->
+    <include>
+      <name>Shelf_R2_C1</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfE_01</uri>
+      <static>true</static>
+      <pose>3.25 0.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R2_C2 -->
+    <include>
+      <name>Shelf_R2_C2</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
+      <static>true</static>
+      <pose>3.25 6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R3_C0 -->
+    <include>
+      <name>Shelf_R3_C0</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfD_01</uri>
+      <static>true</static>
+      <pose>9.75 -6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R3_C1 -->
+    <include>
+      <name>Shelf_R3_C1</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfE_01</uri>
+      <static>true</static>
+      <pose>9.75 0.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Rack Shelf_R3_C2 -->
+    <include>
+      <name>Shelf_R3_C2</name>
+      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/aws_robomaker_warehouse_ShelfF_01</uri>
+      <static>true</static>
+      <pose>9.75 6.0 0 0 0 1.5708</pose>
+    </include>
+    <!-- Palette Pallet_0 -->
+    <include>
+      <name>Pallet_0</name>
+      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
+      <static>true</static>
+      <pose>-15.25 -3.0 0 0 0 0.0</pose>
+    </include>
+    <!-- Palette Pallet_1 -->
+    <include>
+      <name>Pallet_1</name>
+      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
+      <static>true</static>
+      <pose>-15.25 -0.5 0 0 0 0.0</pose>
+    </include>
+    <!-- Palette Pallet_2 -->
+    <include>
+      <name>Pallet_2</name>
+      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
+      <static>true</static>
+      <pose>-15.25 2.0 0 0 0 0.0</pose>
+    </include>
+    <!-- Palette Pallet_3 -->
+    <include>
+      <name>Pallet_3</name>
+      <uri>https://fuel.gazebosim.org/1.0/MovAi/models/pallet_box_mobile</uri>
+      <static>true</static>
+      <pose>-15.25 4.5 0 0 0 0.0</pose>
+    </include>
   </world>
 </sdf>

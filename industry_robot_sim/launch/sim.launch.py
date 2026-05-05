@@ -66,7 +66,7 @@ def generate_launch_description():
             '-name', 'warehouse_bot',
             '-x', '0.0',
             '-y', '0.0',
-            '-z', '0.25',
+            '-z', '0.0',
         ],
         output='screen'
     )
