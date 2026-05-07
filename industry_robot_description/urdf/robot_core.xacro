@@ -1,0 +1,365 @@
+<?xml version="1.0"?>
+<!-- robot_core.xacro — Corps principal du robot AMR d'entrepôt -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- Châssis principal -->
+    <xacro:property name="chassis_length" value="1.0"/>
+    <xacro:property name="chassis_width"  value="0.55"/>
+    <xacro:property name="chassis_height" value="0.30"/>
+    <xacro:property name="chassis_mass"   value="40.0"/>
+
+    <!-- Roues (4 roues motrices ou libres, type skid-steer) -->
+    <xacro:property name="wheel_radius"   value="0.125"/>
+    <xacro:property name="wheel_width"    value="0.08"/>
+    <xacro:property name="wheel_mass"     value="3.0"/>
+    <xacro:property name="wheel_x_offset" value="0.35"/>
+    <xacro:property name="wheel_y_offset" value="0.315"/>
+
+    <!-- Plateau cargo -->
+    <xacro:property name="cargo_length"   value="1.20"/>
+    <xacro:property name="cargo_width"    value="0.70"/>
+    <xacro:property name="cargo_height"   value="0.05"/>
+    <xacro:property name="cargo_mass"     value="5.0"/>
+
+    <!-- Mât avant (support LiDAR + phares) -->
+    <xacro:property name="mast_length"    value="0.10"/>
+    <xacro:property name="mast_width"     value="0.35"/>
+    <xacro:property name="mast_height"    value="0.15"/>
+    <xacro:property name="mast_mass"      value="2.0"/>
+
+    <!-- COULEURS (materials URDF pour RViz) -->
+    <material name="light_grey">  <color rgba="0.78 0.78 0.78 1.0"/> </material>
+    <material name="dark_grey">   <color rgba="0.25 0.25 0.25 1.0"/> </material>
+    <material name="silver">      <color rgba="0.85 0.85 0.87 1.0"/> </material>
+    <material name="black">       <color rgba="0.05 0.05 0.05 1.0"/> </material>
+    <material name="red">         <color rgba="0.85 0.10 0.10 1.0"/> </material>
+    <material name="yellow">      <color rgba="1.0 0.85 0.0 1.0"/>   </material>
+    <material name="orange">      <color rgba="1.0 0.55 0.0 1.0"/>   </material>
+    <material name="green_led">   <color rgba="0.2 0.9 0.2 1.0"/>    </material>
+    <material name="blue">        <color rgba="0.1 0.4 0.9 1.0"/>    </material>
+
+    <!-- projection au sol du robot (z = 0) -->
+    <link name="base_footprint"/>
+
+    <!-- Élevé de wheel_radius au-dessus du sol-->
+    <joint name="base_joint" type="fixed">
+        <parent link="base_footprint"/>
+        <child link="base_link"/>
+        <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0"/>
+    </joint>
+
+    <link name="base_link"/>
+
+    <!-- CHÂSSIS boîte métallique principale  -->
+    <joint name="chassis_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="chassis_link"/>
+        <origin xyz="0 0 ${chassis_height/2}" rpy="0 0 0"/>
+    </joint>
+
+    <link name="chassis_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${chassis_length} ${chassis_width} ${chassis_height}"/>
+            </geometry>
+            <material name="silver"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${chassis_length} ${chassis_width} ${chassis_height}"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="${chassis_mass}" x="${chassis_length}" y="${chassis_width}" z="${chassis_height}">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link>
+
+    <gazebo reference="chassis_link">
+        <material>Gazebo/Grey</material>
+    </gazebo>
+
+    <!-- MACROS POUR LES 4 ROUES -->
+    <xacro:macro name="left_wheel" params="prefix x_offset">
+        <joint name="${prefix}_left_wheel_joint" type="continuous">
+            <parent link="base_link"/>
+            <child link="${prefix}_left_wheel_link"/>
+            <origin xyz="${x_offset} ${wheel_y_offset} 0" rpy="-1.5708 0 0"/>
+            <axis xyz="0 0 1"/>
+        </joint>
+        <link name="${prefix}_left_wheel_link">
+            <visual>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+                </geometry>
+                <material name="black"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+                </geometry>
+            </collision>
+            <xacro:inertial_cylinder mass="${wheel_mass}" length="${wheel_width}" radius="${wheel_radius}">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+            </xacro:inertial_cylinder>
+        </link>
+        <gazebo reference="${prefix}_left_wheel_link">
+            <material>Gazebo/FlatBlack</material>
+            <mu1>0.9</mu1>
+            <mu2>0.05</mu2>
+            <fdir1>1 0 0</fdir1>
+        </gazebo>
+    </xacro:macro>
+
+    <xacro:macro name="right_wheel" params="prefix x_offset">
+        <joint name="${prefix}_right_wheel_joint" type="continuous">
+            <parent link="base_link"/>
+            <child link="${prefix}_right_wheel_link"/>
+            <origin xyz="${x_offset} -${wheel_y_offset} 0" rpy="1.5708 0 0"/>
+            <axis xyz="0 0 -1"/>
+        </joint>
+        <link name="${prefix}_right_wheel_link">
+            <visual>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+                </geometry>
+                <material name="black"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+                </geometry>
+            </collision>
+            <xacro:inertial_cylinder mass="${wheel_mass}" length="${wheel_width}" radius="${wheel_radius}">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+            </xacro:inertial_cylinder>
+        </link>
+        <gazebo reference="${prefix}_right_wheel_link">
+            <material>Gazebo/FlatBlack</material>
+            <mu1>0.9</mu1>
+            <mu2>0.05</mu2>
+            <fdir1>1 0 0</fdir1>
+        </gazebo>
+    </xacro:macro>
+
+    <!-- Instanciation des 4 roues -->
+    <xacro:left_wheel prefix="front" x_offset="${wheel_x_offset}"/>
+    <xacro:left_wheel prefix="rear" x_offset="-${wheel_x_offset}"/>
+    <xacro:right_wheel prefix="front" x_offset="${wheel_x_offset}"/>
+    <xacro:right_wheel prefix="rear" x_offset="-${wheel_x_offset}"/>
+
+
+    <!-- PILIERS DE SUPPORT — 4 montants reliant le châssis au plateau -->
+    <xacro:property name="post_radius" value="0.02"/>
+    <xacro:property name="post_length" value="0.20"/>
+    <xacro:property name="post_z" value="${chassis_height/2 + post_length/2}"/>
+
+    <xacro:macro name="support_post" params="prefix x y">
+        <joint name="${prefix}_post_joint" type="fixed">
+            <parent link="chassis_link"/>
+            <child link="${prefix}_post_link"/>
+            <origin xyz="${x} ${y} ${post_z}" rpy="0 0 0"/>
+        </joint>
+        <link name="${prefix}_post_link">
+            <visual>
+                <geometry>
+                    <cylinder radius="${post_radius}" length="${post_length}"/>
+                </geometry>
+                <material name="dark_grey"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder radius="${post_radius}" length="${post_length}"/>
+                </geometry>
+            </collision>
+            <xacro:inertial_cylinder mass="0.2" length="${post_length}" radius="${post_radius}">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+            </xacro:inertial_cylinder>
+        </link>
+        <gazebo reference="${prefix}_post_link">
+            <material>Gazebo/DarkGrey</material>
+        </gazebo>
+    </xacro:macro>
+
+    <!-- Instanciation des 4 piliers aux coins du plateau -->
+    <xacro:support_post prefix="front_left"  x="0.4"  y="0.2"/>
+    <xacro:support_post prefix="front_right" x="0.4"  y="-0.2"/>
+    <xacro:support_post prefix="rear_left"   x="-0.4" y="0.2"/>
+    <xacro:support_post prefix="rear_right"  x="-0.4" y="-0.2"/>
+
+    <!--  PLATEAU CARGO — surface plate pour transporter les cartons -->
+    <xacro:property name="cargo_z_offset" value="${chassis_height/2 + post_length + cargo_height/2}"/>
+
+    <joint name="cargo_platform_joint" type="fixed">
+        <parent link="chassis_link"/>
+        <child link="cargo_platform_link"/>
+        <origin xyz="0 0 ${cargo_z_offset}" rpy="0 0 0"/>
+    </joint>
+
+    <!-- NB: <collision> retiré du plateau cargo pour éviter la self-detection LiDAR.
+         Le plateau reste visible (visual) et conserve sa masse (inertial),
+         mais devient transparent au raycasting du gpu_lidar. -->
+    <link name="cargo_platform_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${cargo_length} ${cargo_width} ${cargo_height}"/>
+            </geometry>
+            <material name="light_grey"/>
+        </visual>
+        <xacro:inertial_box mass="${cargo_mass}" x="${cargo_length}" y="${cargo_width}" z="${cargo_height}">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link>
+
+    <gazebo reference="cargo_platform_link">
+        <material>Gazebo/White</material>
+    </gazebo>
+
+    <!-- RAILS LATÉRAUX — décoration sur le plateau pour correspondre à l'image -->
+    <xacro:macro name="side_rail" params="prefix y_pos color">
+        <joint name="${prefix}_rail_joint" type="fixed">
+            <parent link="cargo_platform_link"/>
+            <child link="${prefix}_rail_link"/>
+            <origin xyz="0 ${y_pos} 0.025" rpy="0 0 0"/>
+        </joint>
+        <link name="${prefix}_rail_link">
+            <visual>
+                <geometry>
+                    <box size="${cargo_length} 0.02 0.05"/>
+                </geometry>
+                <material name="${color}"/>
+            </visual>
+            <xacro:inertial_box mass="0.5" x="${cargo_length}" y="0.02" z="0.05">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+            </xacro:inertial_box>
+        </link>
+        <gazebo reference="${prefix}_rail_link">
+            <material>Gazebo/Blue</material>
+        </gazebo>
+    </xacro:macro>
+
+    <xacro:side_rail prefix="left"  y_pos="0.34" color="blue"/>
+    <xacro:side_rail prefix="right" y_pos="-0.34" color="blue"/>
+
+    <!-- PARE-CHOCS AVANT — barre de protection industrielle -->
+    <joint name="front_bumper_joint" type="fixed">
+        <parent link="chassis_link"/>
+        <child link="front_bumper_link"/>
+        <origin xyz="${chassis_length/2 + 0.02} 0 -0.10" rpy="0 0 0"/>
+    </joint>
+
+    <link name="front_bumper_link">
+        <visual>
+            <geometry>
+                <box size="0.04 ${chassis_width + 0.10} 0.05"/>
+            </geometry>
+            <material name="dark_grey"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.04 ${chassis_width + 0.10} 0.05"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="1.0" x="0.04" y="${chassis_width + 0.10}" z="0.05">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link>
+
+    <gazebo reference="front_bumper_link">
+        <material>Gazebo/DarkGrey</material>
+    </gazebo>
+
+    <!--  MÂT AVANT — structure portant le LiDAR et les phares  -->
+    <joint name="front_mast_joint" type="fixed">
+        <parent link="chassis_link"/>
+        <child link="front_mast_link"/>
+        <origin xyz="${chassis_length/2 - 0.05} 0 ${chassis_height/2 + mast_height/2}" rpy="0 0 0"/>
+    </joint>
+
+    <link name="front_mast_link">
+        <visual>
+            <geometry>
+                <box size="${mast_length} ${mast_width} ${mast_height}"/>
+            </geometry>
+            <material name="silver"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="${mast_length} ${mast_width} ${mast_height}"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="${mast_mass}" x="${mast_length}" y="${mast_width}" z="${mast_height}">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link>
+
+    <gazebo reference="front_mast_link">
+        <material>Gazebo/Grey</material>
+    </gazebo>
+
+    <!--  BOUTON D'ARRÊT D'URGENCE (E-Stop) — visuel décoratif-->
+    <joint name="estop_joint" type="fixed">
+        <parent link="front_mast_link"/>
+        <child link="estop_link"/>
+        <origin xyz="0.05 -0.12 0.05" rpy="0 1.5708 0"/>
+    </joint>
+
+    <link name="estop_link">
+        <visual>
+            <geometry>
+                <cylinder radius="0.02" length="0.02"/>
+            </geometry>
+            <material name="red"/>
+        </visual>
+    </link>
+
+    <gazebo reference="estop_link">
+        <material>Gazebo/Red</material>
+    </gazebo>
+
+    <!--  PHARES AVANT — 2 lumières LED sur le mât -->
+    <xacro:macro name="headlight" params="prefix y_offset">
+        <joint name="${prefix}_light_joint" type="fixed">
+            <parent link="front_mast_link"/>
+            <child link="${prefix}_light_link"/>
+            <origin xyz="0.051 ${y_offset} -0.04" rpy="0 1.5708 0"/>
+        </joint>
+        <link name="${prefix}_light_link">
+            <visual>
+                <geometry>
+                    <cylinder radius="0.02" length="0.01"/>
+                </geometry>
+                <material name="yellow"/>
+            </visual>
+        </link>
+        <gazebo reference="${prefix}_light_link">
+            <material>Gazebo/Yellow</material>
+        </gazebo>
+    </xacro:macro>
+
+    <xacro:headlight prefix="left_head"  y_offset="0.10"/>
+    <xacro:headlight prefix="right_head" y_offset="-0.10"/>
+
+    <!-- INDICATEUR LED STATUS — petit voyant vert sur le mât -->
+    <joint name="status_led_joint" type="fixed">
+        <parent link="front_mast_link"/>
+        <child link="status_led_link"/>
+        <origin xyz="0.051 0 0.05" rpy="0 1.5708 0"/>
+    </joint>
+
+    <link name="status_led_link">
+        <visual>
+            <geometry>
+                <cylinder radius="0.01" length="0.01"/>
+            </geometry>
+            <material name="green_led"/>
+        </visual>
+    </link>
+
+    <gazebo reference="status_led_link">
+        <material>Gazebo/Green</material>
+    </gazebo>
+
+</robot>
