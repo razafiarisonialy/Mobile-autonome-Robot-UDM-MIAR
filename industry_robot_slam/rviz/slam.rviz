@@ -1,101 +1,415 @@
 Panels:
   - Class: rviz_common/Displays
+    Help Height: 70
     Name: Displays
+    Property Tree Widget:
+      Expanded: ~
+      Splitter Ratio: 0.5
+    Tree Height: 432
   - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
     Name: Views
-
+    Splitter Ratio: 0.5
 Visualization Manager:
   Class: ""
   Displays:
-    # --- Grille de référence (50 cellules × 0.5 m = zone 25 m) ---
-    - Class: rviz_default_plugins/Grid
-      Name: Grille
-      Enabled: true
-      Cell Count: 50
+    - Alpha: 0.5
       Cell Size: 0.5
+      Class: rviz_default_plugins/Grid
       Color: 100; 100; 100
+      Enabled: true
       Line Style:
+        Line Width: 0.029999999329447746
         Value: Lines
+      Name: Grille
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
       Plane: XY
       Plane Cell Count: 50
-
-    # --- Modèle 3D du robot ---
-    - Class: rviz_default_plugins/RobotModel
-      Name: Modèle Robot
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
       Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
         Value: /robot_description
       Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        base_footprint:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        cargo_platform_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        chassis_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        estop_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_bumper_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_left_post_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_left_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_mast_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_right_post_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_right_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_head_light_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_rail_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        lidar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rear_left_post_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rear_left_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rear_right_post_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rear_right_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_head_light_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_rail_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        status_led_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+      Mass Properties:
+        Inertia: false
+        Mass: false
+      Name: Modèle Robot
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
       Visual Enabled: true
-      Collision Enabled: false
-      Alpha: 1.0
-
-    # --- Arbre des transformations TF ---
     - Class: rviz_default_plugins/TF
-      Name: TF
       Enabled: true
+      Filter (blacklist): ""
+      Filter (whitelist): ""
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        base_footprint:
+          Value: true
+        base_link:
+          Value: true
+        cargo_platform_link:
+          Value: true
+        chassis_link:
+          Value: true
+        estop_link:
+          Value: true
+        front_bumper_link:
+          Value: true
+        front_left_post_link:
+          Value: true
+        front_left_wheel_link:
+          Value: true
+        front_mast_link:
+          Value: true
+        front_right_post_link:
+          Value: true
+        front_right_wheel_link:
+          Value: true
+        imu_link:
+          Value: true
+        left_head_light_link:
+          Value: true
+        left_rail_link:
+          Value: true
+        lidar_link:
+          Value: true
+        map:
+          Value: true
+        odom:
+          Value: true
+        rear_left_post_link:
+          Value: true
+        rear_left_wheel_link:
+          Value: true
+        rear_right_post_link:
+          Value: true
+        rear_right_wheel_link:
+          Value: true
+        right_head_light_link:
+          Value: true
+        right_rail_link:
+          Value: true
+        status_led_link:
+          Value: true
+      Marker Scale: 0.30000001192092896
+      Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
-      Marker Scale: 0.3
-
-    # --- Carte d'occupation construite par Cartographer ---
-    - Class: rviz_default_plugins/Map
-      Name: Carte SLAM
-      Topic:
-        Value: /map
-        Reliability Policy: Reliable
-      Enabled: true
-      Alpha: 0.7
+      Tree:
+        map:
+          {}
+        odom:
+          base_footprint:
+            base_link:
+              chassis_link:
+                cargo_platform_link:
+                  left_rail_link:
+                    {}
+                  right_rail_link:
+                    {}
+                front_bumper_link:
+                  {}
+                front_left_post_link:
+                  {}
+                front_mast_link:
+                  estop_link:
+                    {}
+                  left_head_light_link:
+                    {}
+                  lidar_link:
+                    {}
+                  right_head_light_link:
+                    {}
+                  status_led_link:
+                    {}
+                front_right_post_link:
+                  {}
+                imu_link:
+                  {}
+                rear_left_post_link:
+                  {}
+                rear_right_post_link:
+                  {}
+              front_left_wheel_link:
+                {}
+              front_right_wheel_link:
+                {}
+              rear_left_wheel_link:
+                {}
+              rear_right_wheel_link:
+                {}
+      Update Interval: 0
+      Value: true
+    - Alpha: 0.699999988079071
+      Binary representation: false
+      Binary threshold: 100
+      Class: rviz_default_plugins/Map
       Color Scheme: map
       Draw Behind: false
-
-    # --- Scan LiDAR filtré (obstacles externes, en vert clair) ---
-    - Class: rviz_default_plugins/LaserScan
-      Name: LiDAR Filtré
-      Topic:
-        Value: /scan_filtered
-        Reliability Policy: Best Effort
-      Size (m): 0.05
-      Color Transformer: FlatColor
-      Color: 0; 255; 0
       Enabled: true
-      Queue Size: 5
-
-    # --- Trajectoire odométrique (flèches bleues, keep 100 poses) ---
-    - Class: rviz_default_plugins/Odometry
-      Name: Odométrie
+      Name: Carte SLAM
       Topic:
-        Value: /odom
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /map
+      Update Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /map_updates
+      Use Timestamp: false
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz_default_plugins/LaserScan
+      Color: 0; 255; 0
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: LiDAR Filtré
+      Position Transformer: XYZ
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.05000000074505806
+      Style: Flat Squares
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /scan_filtered
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Angle Tolerance: 0.10000000149011612
+      Class: rviz_default_plugins/Odometry
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: false
       Enabled: true
       Keep: 100
+      Name: Odométrie
+      Position Tolerance: 0.10000000149011612
       Shape:
-        Alpha: 1.0
-        Axes Length: 0.3
-        Axes Radius: 0.01
+        Alpha: 1
+        Axes Length: 0.30000001192092896
+        Axes Radius: 0.009999999776482582
         Color: 0; 0; 255
+        Head Length: 0.30000001192092896
+        Head Radius: 0.10000000149011612
+        Shaft Length: 1
+        Shaft Radius: 0.05000000074505806
         Value: Arrow
-      Covariance:
-        Value: false
-      Position Tolerance: 0.1
-      Angle Tolerance: 0.1
-
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /odom
+      Value: true
+  Enabled: true
   Global Options:
-    Fixed Frame: odom
-    Frame Rate: 30
     Background Color: 48; 48; 48
-
+    Fixed Frame: map
+    Frame Rate: 30
+  Name: root
   Tools:
     - Class: rviz_default_plugins/MoveCamera
     - Class: rviz_default_plugins/Select
     - Class: rviz_default_plugins/FocusCamera
     - Class: rviz_default_plugins/Measure
-
+      Line color: 128; 128; 0
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
   Views:
     Current:
+      Angle: 2.5900001525878906
       Class: rviz_default_plugins/TopDownOrtho
-      Scale: 40
-      Near Clip Distance: 0.01
-      Far Clip Distance: 100.0
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Scale: 15.51800537109375
       Target Frame: map
-      X: 0.0
-      Y: 0.0
+      Value: TopDownOrtho (rviz_default_plugins)
+      X: -4.529724597930908
+      Y: 5.570523738861084
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 1047
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd00000001000000000000019b000003c1fc0200000002fb000000100044006900730070006c006100790073010000003b00000231000000c700fffffffb0000000a0056006900650077007301000002720000018a000000a000ffffff000005d3000003c100000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Views:
+    collapsed: false
+  Width: 1908
+  X: 0
+  Y: 0
