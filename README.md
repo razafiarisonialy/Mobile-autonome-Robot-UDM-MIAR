@@ -17,7 +17,7 @@ Workspace ROS 2 complet pour la simulation et la cartographie d'un **robot mobil
 | `industry_robot_multi_sim` | Simulation multi-robots (flotte de 4 AMR) |
 | `industry_robot_slam` | SLAM 2D Cartographer (cartographie temps réel) |
 
-> **Design inspiré** du TurtleBot3 Waffle et du robot industriel [Effidence EffiBOT](https://effidence.com/).
+> **Design inspiré** de l'architecture industrielle **Husky A300** de Clearpath Robotics, agrémenté d'une touche académique distinctive (UDM MIAR).
 
 ---
 
@@ -25,23 +25,18 @@ Workspace ROS 2 complet pour la simulation et la cartographie d'un **robot mobil
 
 | Élément | Dimensions | Détail |
 |---------|-----------|--------|
-| Châssis | 100 × 55 × 30 cm | Boîte rectangulaire, gris clair |
-| Plateau cargo | 120 × 70 × 5 cm | Surélevé sur 4 piliers, blanc |
-| 4 Roues motrices | Ø 25 cm, largeur 8 cm | Configuration Skid-steer (μ=0.9) |
-| LiDAR 2D | Ø 4 cm × 4 cm | 360°, portée 0.12–10 m, sur le mât |
-| IMU | 3 × 3 × 1 cm | Centre du châssis |
-| Masse totale | ~62 kg | Budget réaliste pour AMR industriel |
+| Châssis | 90 × 60 × 25 cm | Boîte rectangulaire robuste, **Jaune Industriel** |
+| Plateau supérieur | 85 × 60 × 2 cm | Fixé directement sur le châssis, Gris foncé, avec **Rails bleus UDM** |
+| 4 Roues motrices | Ø 33 cm, largeur 11.4 cm | Configuration Skid-steer type tout-terrain (μ=0.9) |
+| Mât Capteurs | Ø 10 cm × 20 cm | Mât central tubulaire |
+| LiDAR 2D | Ø 4 cm × 4 cm | 360°, portée 0.12–10 m, perché au sommet du mât |
+| IMU | 3 × 3 × 1 cm | Intégré au centre du châssis |
+| Masse totale | ~66 kg | Budget réaliste pour AMR industriel |
 
 **Cinématique** : Skid-steer (4 roues motrices)
 
 **Vitesses max** : 1.0 m/s linéaire, 2.0 rad/s angulaire
 
-### Éléments visuels (inspirés Effidence EffiBOT)
-- 🔴 Bouton d'arrêt d'urgence (E-Stop) sur le mât
-- 💡 2 phares LED jaunes à l'avant
-- 🟢 Voyant LED de status
-- 🛡️ Pare-chocs avant de protection
-- 🔩 Rails latéraux garde-corps sur le plateau
 
 ---
 
@@ -261,7 +256,7 @@ Le robot détecte nativement ses propres surfaces dans le scan LiDAR brut (plate
 | Couche | Mécanisme | Fichier concerné |
 |--------|-----------|-----------------|
 | **Filtre intrinsèque (URDF)** | `<collision>` retiré du `cargo_platform_link` → lien transparent au raycasting Gazebo | `urdf/robot_core.xacro` |
-| **Filtre logiciel** | Nœud `scan_to_scan_filter_chain` (`laser_filters`) masquant une boîte 1.30 × 0.80 m autour du robot | `config/laser_filter.yaml` |
+| **Filtre logiciel** | Nœud `scan_to_scan_filter_chain` (`laser_filters`) masquant une boîte de 1.60 × 1.10 m autour du robot | `config/laser_filter.yaml` |
 
 Le topic `/scan` (brut) reste disponible. Le topic `/scan_filtered` est produit par le filtre logiciel et doit être utilisé par Cartographer / Nav2.
 
