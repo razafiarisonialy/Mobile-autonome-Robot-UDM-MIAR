@@ -7,9 +7,9 @@
 # industriel (industry_robot_2d.lua).
 #
 # Pré-requis : sim.launch.py de industry_robot_sim doit déjà tourner
-# dans un autre terminal (Gazebo + bridge + laser_filter actifs).
+# dans un autre terminal (Gazebo + bridge actifs).
 #
-# Topic SLAM en entrée : /scan_filtered (LiDAR filtré)
+# Topic SLAM en entrée : /scan (LiDAR brut)
 # Topic SLAM en sortie : /map (OccupancyGrid)
 # ================================================================
 
@@ -32,7 +32,7 @@ def generate_launch_description():
     # ========== Arguments de lancement ==========
     use_sim_time       = LaunchConfiguration('use_sim_time',       default='true')
     use_rviz           = LaunchConfiguration('use_rviz',           default='true')
-    scan_topic         = LaunchConfiguration('scan_topic',         default='/scan_filtered')
+    scan_topic         = LaunchConfiguration('scan_topic',         default='/scan')
     resolution         = LaunchConfiguration('resolution',         default='0.05')
     publish_period_sec = LaunchConfiguration('publish_period_sec', default='1.0')
 
@@ -45,8 +45,8 @@ def generate_launch_description():
         description='Lancer RViz avec la config slam.rviz.'
     )
     declare_scan_topic = DeclareLaunchArgument(
-        'scan_topic', default_value='/scan_filtered',
-        description="Topic LiDAR consommé par Cartographer (default: /scan_filtered)."
+        'scan_topic', default_value='/scan',
+        description="Topic LiDAR consommé par Cartographer (default: /scan)."
     )
     declare_resolution = DeclareLaunchArgument(
         'resolution', default_value='0.05',

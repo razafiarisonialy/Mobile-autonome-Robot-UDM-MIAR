@@ -129,6 +129,7 @@ ros2 launch industry_robot_sim sim.launch.py
 ```bash
 ros2 launch industry_robot_slam slam.launch.py
 ```
+Par défaut, ce launch utilise maintenant le scan brut `/scan` pour Cartographer.
 
 **Terminal 3** — Téléopération clavier :
 ```bash
@@ -137,7 +138,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 **Sauvegarder la carte** une fois l'exploration terminée :
 ```bash
-ros2 run nav2_map_server map_saver_cli -f ~/ros2_ws/src/Mobile-autonome-Robot-UDM-MIAR/industry_robot_description/maps/warehouse
+ros2 run nav2_map_server map_saver_cli -f ~/ros2_ws/src/Mobile-autonome-Robot-UDM-MIAR/industry_robot_description/maps/warehouse_raw_scan
 ```
 
 ---
@@ -214,7 +215,7 @@ Le package `industry_robot_slam` implémente la **cartographie 2D en temps réel
 ### Architecture SLAM
 
 ```
-/scan_filtered  ──►  cartographer_node  ──►  /map (OccupancyGrid)
+/scan           ──►  cartographer_node  ──►  /map (OccupancyGrid)
 /imu            ──►  (SLAM en temps réel)    /submap_list
 /odom           ──►                          TF: map → odom
 ```
@@ -234,14 +235,14 @@ Le package `industry_robot_slam` implémente la **cartographie 2D en temps réel
 | Argument | Défaut | Description |
 |----------|--------|-------------|
 | `use_sim_time` | `true` | Horloge Gazebo |
-| `scan_topic` | `/scan_filtered` | Source LiDAR pour Cartographer |
+| `scan_topic` | `/scan` | Source LiDAR brute pour Cartographer |
 | `resolution` | `0.05` | Résolution carte en m/cell |
 | `publish_period_sec` | `1.0` | Période de publication de `/map` |
 | `use_rviz` | `true` | Ouvrir RViz avec la config SLAM |
 
 ```bash
-# Exemple : utiliser le scan brut à la place du scan filtré (débogage)
-ros2 launch industry_robot_slam slam.launch.py scan_topic:=/scan
+# Exemple : revenir temporairement au scan filtré
+ros2 launch industry_robot_slam slam.launch.py scan_topic:=/scan_filtered
 
 # Exemple : désactiver RViz (mode headless)
 ros2 launch industry_robot_slam slam.launch.py use_rviz:=false
@@ -258,7 +259,7 @@ Le robot détecte nativement ses propres surfaces dans le scan LiDAR brut (plate
 | **Filtre intrinsèque (URDF)** | `<collision>` retiré du `cargo_platform_link` → lien transparent au raycasting Gazebo | `urdf/robot_core.xacro` |
 | **Filtre logiciel** | Nœud `scan_to_scan_filter_chain` (`laser_filters`) masquant une boîte de 1.60 × 1.10 m autour du robot | `config/laser_filter.yaml` |
 
-Le topic `/scan` (brut) reste disponible. Le topic `/scan_filtered` est produit par le filtre logiciel et doit être utilisé par Cartographer / Nav2.
+Le topic `/scan` (brut) est utilisé par défaut par Cartographer. Le topic `/scan_filtered` reste disponible pour comparer ou déboguer le filtrage logiciel.
 
 Dans **RViz**, deux displays sont disponibles :
 - 🔴 `/scan` — scan brut (rouge)
