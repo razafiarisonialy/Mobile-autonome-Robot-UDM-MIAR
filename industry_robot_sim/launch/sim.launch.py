@@ -100,13 +100,13 @@ def generate_launch_description():
     )
 
     # RVIZ2
-    rviz = Node(
-        package='rviz2',
-        executable='rviz2',
-        arguments=['-d', rviz_config],
-        parameters=[{'use_sim_time': True}],
-        output='screen'
-    )
+    # rviz = Node(
+    #     package='rviz2',
+    #     executable='rviz2',
+    #     arguments=['-d', rviz_config],
+    #     parameters=[{'use_sim_time': True}],
+    #     output='screen'
+    # )
 
     return LaunchDescription([
         gazebo,
@@ -115,5 +115,5 @@ def generate_launch_description():
         spawn_entity,
         bridge,
         laser_filter,
-        rviz,
+        # rviz,
     ])
