@@ -20,7 +20,7 @@ Le projet a évolué depuis un modèle basique vers une architecture robuste, in
 
 ### 3. Synchronisation Simulation-ROS 2 (Bridge)
 - **ros_gz_bridge** : Mise en place et optimisation du pont entre Gazebo Harmonic et ROS 2 Jazzy. Synchronisation bidirectionnelle des commandes de vélocité (`cmd_vel`), odométrie (`odom`), et capteurs (`scan`, `imu`).
-- **Filtrage Sensoriel** : Configuration de `laser_filters` pour éviter que le LiDAR ne détecte des pièces du robot lui-même (Self-Detection).
+- **LiDAR brut** : Le scan Gazebo `/scan` est consommé directement par ROS 2 et Cartographer, sans filtre logiciel intermédiaire.
 
 ---
 
@@ -43,12 +43,11 @@ graph LR
 
     subgraph ROS2 [ROS 2 Jazzy]
         R_RSP[robot_state_publisher]
-        R_Filter[laser_filters]
         R_RViz[RViz2 Visualization]
     end
 
     GZ_Phys <--> B_Vel <--> ROS2
-    GZ_Sens --> B_Sens --> R_Filter --> R_RViz
+    GZ_Sens --> B_Sens --> R_RViz
     GZ_Phys --> B_Odom --> R_RViz
 ```
 

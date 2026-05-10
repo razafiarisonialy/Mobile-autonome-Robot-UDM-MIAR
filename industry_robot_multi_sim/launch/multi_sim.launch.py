@@ -16,7 +16,6 @@ def generate_launch_description():
 
     xacro_file          = os.path.join(pkg_description, 'urdf', 'warehouse_bot.urdf.xacro')
     world_file          = os.path.join(pkg_description, 'worlds', 'warehouse.sdf')
-    laser_filter_config = os.path.join(pkg_description, 'config', 'laser_filter.yaml')
     rviz_config         = os.path.join(pkg_multi_sim, 'rviz', 'multi_sim.rviz')
     
     world_name = 'warehouse_world'
@@ -145,26 +144,6 @@ def generate_launch_description():
             output='screen'
         )
         nodes.append(robot_bridge)
-
-        # Filtre Laser
-        laser_filter = Node(
-            package='laser_filters',
-            executable='scan_to_scan_filter_chain',
-            name=f'{name}_laser_filter',
-            parameters=[
-                laser_filter_config,
-                {
-                    'use_sim_time': True,
-                    'filter1.params.box_frame': f'{name}/base_link',
-                }
-            ],
-            remappings=[
-                ('scan', f'/{name}/scan'),
-                ('scan_filtered', f'/{name}/scan_filtered'),
-            ],
-            output='screen'
-        )
-        nodes.append(laser_filter)
 
     # RViz
     rviz = Node(

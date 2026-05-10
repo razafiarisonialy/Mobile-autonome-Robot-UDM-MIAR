@@ -25,7 +25,7 @@
     <xacro:property name="cargo_mass"   value="3.0"/>
 
     <xacro:property name="mast_width"  value="0.12"/>
-    <xacro:property name="mast_height" value="0.12"/>
+    <xacro:property name="mast_height" value="0.30"/>
     <xacro:property name="mast_mass"   value="2.0"/>
 
     <xacro:property name="rack_height" value="0.22"/>

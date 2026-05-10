@@ -16,7 +16,6 @@ def generate_launch_description():
 
     xacro_file   = os.path.join(pkg_description, 'urdf', 'warehouse_bot.urdf.xacro')
     bridge_config        = os.path.join(pkg_sim, 'config', 'bridge.yaml')
-    laser_filter_config  = os.path.join(pkg_description, 'config', 'laser_filter.yaml')
     rviz_config          = os.path.join(pkg_sim, 'rviz', 'view_robot.rviz')
     world_file = os.path.join(pkg_description, 'worlds', 'tugbot_warehouse.sdf')
 
@@ -83,22 +82,6 @@ def generate_launch_description():
         output='screen'
     )
 
-    # FILTRE LASER
-    laser_filter = Node(
-        package='laser_filters',
-        executable='scan_to_scan_filter_chain',
-        name='laser_filter',
-        parameters=[
-            laser_filter_config,
-            {'use_sim_time': True}
-        ],
-        remappings=[
-            ('scan', '/scan'),
-            ('scan_filtered', '/scan_filtered'),
-        ],
-        output='screen'
-    )
-
     # RVIZ2
     rviz = Node(
         package='rviz2',
@@ -114,6 +97,5 @@ def generate_launch_description():
         joint_state_publisher,
         spawn_entity,
         bridge,
-        laser_filter,
         rviz,
     ])

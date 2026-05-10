@@ -13,7 +13,7 @@ Workspace ROS 2 complet pour la simulation et la cartographie d'un **robot mobil
 | Package | Description |
 |---------|-------------|
 | `industry_robot_description` | **Source centrale** — URDF/Xacro, configs, monde Gazebo (`worlds/`), cartes SLAM (`maps/`) |
-| `industry_robot_sim` | Simulation mono-robot (Gazebo + bridge + filtrage LiDAR) |
+| `industry_robot_sim` | Simulation mono-robot (Gazebo + bridge + LiDAR brut) |
 | `industry_robot_multi_sim` | Simulation multi-robots (flotte de 4 AMR) |
 | `industry_robot_slam` | SLAM 2D Cartographer (cartographie temps réel) |
 
@@ -73,7 +73,6 @@ sudo apt install -y \
   ros-jazzy-xacro \
   ros-jazzy-teleop-twist-keyboard \
   ros-jazzy-rviz2 \
-  ros-jazzy-laser-filters \
   ros-jazzy-turtlebot3-cartographer \
   ros-jazzy-nav2-map-server
 ```
@@ -166,7 +165,6 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/rob
 | `/cmd_vel` | `geometry_msgs/Twist` | ROS → GZ | Commande de vitesse |
 | `/odom` | `nav_msgs/Odometry` | GZ → ROS | Odométrie du robot |
 | `/scan` | `sensor_msgs/LaserScan` | GZ → ROS | Données LiDAR 360° (brutes) |
-| `/scan_filtered` | `sensor_msgs/LaserScan` | ROS | Données LiDAR après filtrage (obstacles externes uniquement) |
 | `/imu` | `sensor_msgs/Imu` | GZ → ROS | Accélérations et rotations |
 | `/joint_states` | `sensor_msgs/JointState` | GZ → ROS | Position des roues (via `joint_state_publisher`) |
 | `/tf` | `tf2_msgs/TFMessage` | GZ → ROS | Transformations TF |
@@ -184,9 +182,6 @@ ros2 topic echo /odom
 
 # Voir les données LiDAR brutes
 ros2 topic echo /scan --once
-
-# Voir les données LiDAR filtrées
-ros2 topic echo /scan_filtered --once
 
 # Visualiser l'arbre TF complet
 ros2 run tf2_tools view_frames
@@ -241,27 +236,15 @@ Le package `industry_robot_slam` implémente la **cartographie 2D en temps réel
 | `use_rviz` | `true` | Ouvrir RViz avec la config SLAM |
 
 ```bash
-# Exemple : revenir temporairement au scan filtré
-ros2 launch industry_robot_slam slam.launch.py scan_topic:=/scan_filtered
-
 # Exemple : désactiver RViz (mode headless)
 ros2 launch industry_robot_slam slam.launch.py use_rviz:=false
 ```
 
 ---
 
-## 🔍 Filtrage LiDAR (anti self-detection)
+## 🔍 LiDAR brut
 
-Le robot détecte nativement ses propres surfaces dans le scan LiDAR brut (plateau cargo notamment). Deux couches de filtrage complémentaires sont en place :
+Le projet utilise le topic `/scan` directement dans toute la chaîne SLAM.
 
-| Couche | Mécanisme | Fichier concerné |
-|--------|-----------|-----------------|
-| **Filtre intrinsèque (URDF)** | `<collision>` retiré du `cargo_platform_link` → lien transparent au raycasting Gazebo | `urdf/robot_core.xacro` |
-| **Filtre logiciel** | Nœud `scan_to_scan_filter_chain` (`laser_filters`) masquant une boîte de 1.60 × 1.10 m autour du robot | `config/laser_filter.yaml` |
-
-Le topic `/scan` (brut) est utilisé par défaut par Cartographer. Le topic `/scan_filtered` reste disponible pour comparer ou déboguer le filtrage logiciel.
-
-Dans **RViz**, deux displays sont disponibles :
-- 🔴 `/scan` — scan brut (rouge)
-- 🟢 `/scan_filtered` — obstacles externes uniquement (vert)
+Dans **RViz**, le display LiDAR pointe sur `/scan`.
 
