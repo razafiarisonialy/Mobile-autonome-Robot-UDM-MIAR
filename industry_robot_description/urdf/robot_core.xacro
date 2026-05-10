@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
-<!-- robot_core.xacro — Corps principal du robot AMR d'entrepôt -->
+<!-- robot_core.xacro - Corps principal du robot AMR style Husky A300 -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-    <!-- Châssis principal (Style Husky A300) -->
+    <!-- Dimensions principales du robot -->
     <xacro:property name="chassis_length" value="0.90"/>
     <xacro:property name="chassis_width"  value="0.54"/>
     <xacro:property name="chassis_height" value="0.25"/>
@@ -13,40 +13,36 @@
     <xacro:property name="bumper_height" value="0.11"/>
     <xacro:property name="bumper_mass"   value="2.0"/>
 
-    <!-- Roues (4 roues type tout-terrain Husky) -->
     <xacro:property name="wheel_radius"   value="0.165"/>
     <xacro:property name="wheel_width"    value="0.114"/>
     <xacro:property name="wheel_mass"     value="4.0"/>
     <xacro:property name="wheel_x_offset" value="0.28"/>
     <xacro:property name="wheel_y_offset" value="0.37"/>
 
-    <!-- Plateau supérieur (Top Plate) -->
-    <xacro:property name="cargo_length"   value="0.82"/>
-    <xacro:property name="cargo_width"    value="0.48"/>
-    <xacro:property name="cargo_height"   value="0.04"/>
-    <xacro:property name="cargo_mass"     value="3.0"/>
+    <xacro:property name="cargo_length" value="0.82"/>
+    <xacro:property name="cargo_width"  value="0.48"/>
+    <xacro:property name="cargo_height" value="0.04"/>
+    <xacro:property name="cargo_mass"   value="3.0"/>
 
-    <!-- Mât capteurs (LiDAR & IMU) -->
-    <xacro:property name="mast_length"    value="0.10"/>
-    <xacro:property name="mast_width"     value="0.10"/>
-    <xacro:property name="mast_height"    value="0.20"/>
-    <xacro:property name="mast_mass"      value="1.5"/>
+    <xacro:property name="mast_width"  value="0.12"/>
+    <xacro:property name="mast_height" value="0.12"/>
+    <xacro:property name="mast_mass"   value="2.0"/>
 
-    <!-- COULEURS (materials URDF pour RViz) -->
-    <material name="light_grey">  <color rgba="0.78 0.78 0.78 1.0"/> </material>
-    <material name="dark_grey">   <color rgba="0.25 0.25 0.25 1.0"/> </material>
-    <material name="silver">      <color rgba="0.85 0.85 0.87 1.0"/> </material>
-    <material name="black">       <color rgba="0.05 0.05 0.05 1.0"/> </material>
-    <material name="red">         <color rgba="0.85 0.10 0.10 1.0"/> </material>
-    <material name="yellow">      <color rgba="1.0 0.85 0.0 1.0"/>   </material>
-    <material name="orange">      <color rgba="1.0 0.55 0.0 1.0"/>   </material>
-    <material name="green_led">   <color rgba="0.2 0.9 0.2 1.0"/>    </material>
-    <material name="blue">        <color rgba="0.1 0.4 0.9 1.0"/>    </material>
+    <xacro:property name="rack_height" value="0.22"/>
+    <xacro:property name="rack_length" value="0.78"/>
+    <xacro:property name="rack_width" value="0.48"/>
+    <xacro:property name="rack_thickness" value="0.05"/>
+    <xacro:property name="pillar_radius" value="0.035"/>
 
-    <!-- projection au sol du robot (z = 0) -->
+    <!-- Materials URDF -->
+    <material name="light_grey"><color rgba="0.78 0.78 0.78 1.0"/></material>
+    <material name="dark_grey"><color rgba="0.25 0.25 0.25 1.0"/></material>
+    <material name="silver"><color rgba="0.85 0.85 0.87 1.0"/></material>
+    <material name="black"><color rgba="0.05 0.05 0.05 1.0"/></material>
+    <material name="blue"><color rgba="0.1 0.4 0.9 1.0"/></material>
+
     <link name="base_footprint"/>
 
-    <!-- Élevé de wheel_radius au-dessus du sol-->
     <joint name="base_joint" type="fixed">
         <parent link="base_footprint"/>
         <child link="base_link"/>
@@ -55,7 +51,6 @@
 
     <link name="base_link"/>
 
-    <!-- CHÂSSIS boîte métallique principale  -->
     <joint name="chassis_joint" type="fixed">
         <parent link="base_link"/>
         <child link="chassis_link"/>
@@ -115,7 +110,6 @@
     <xacro:bumper name="front" x_offset="${chassis_length/2 + bumper_length/2}"/>
     <xacro:bumper name="rear" x_offset="-${chassis_length/2 + bumper_length/2}"/>
 
-    <!-- MACROS POUR LES 4 ROUES -->
     <xacro:macro name="left_wheel" params="prefix x_offset">
         <joint name="${prefix}_left_wheel_joint" type="continuous">
             <parent link="base_link"/>
@@ -178,25 +172,17 @@
         </gazebo>
     </xacro:macro>
 
-    <!-- Instanciation des 4 roues -->
     <xacro:left_wheel prefix="front" x_offset="${wheel_x_offset}"/>
     <xacro:left_wheel prefix="rear" x_offset="-${wheel_x_offset}"/>
     <xacro:right_wheel prefix="front" x_offset="${wheel_x_offset}"/>
     <xacro:right_wheel prefix="rear" x_offset="-${wheel_x_offset}"/>
 
-
-    <!--  PLATEAU SUPÉRIEUR — top plate du Husky -->
-    <xacro:property name="cargo_z_offset" value="${chassis_height/2 + cargo_height/2}"/>
-
     <joint name="cargo_platform_joint" type="fixed">
         <parent link="chassis_link"/>
         <child link="cargo_platform_link"/>
-        <origin xyz="0 0 ${cargo_z_offset}" rpy="0 0 0"/>
+        <origin xyz="0 0 ${chassis_height/2 + cargo_height/2}" rpy="0 0 0"/>
     </joint>
 
-    <!-- NB: <collision> retiré du plateau cargo pour éviter la self-detection LiDAR.
-         Le plateau reste visible (visual) et conserve sa masse (inertial),
-         mais devient transparent au raycasting du gpu_lidar. -->
     <link name="cargo_platform_link">
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -214,9 +200,6 @@
         <material>Gazebo/DarkGrey</material>
     </gazebo>
 
-
-
-    <!--  MÂT CAPTEURS — structure centrale pour LiDAR et IMU  -->
     <joint name="sensor_mast_joint" type="fixed">
         <parent link="cargo_platform_link"/>
         <child link="sensor_mast_link"/>
@@ -244,6 +227,63 @@
         <material>Gazebo/Grey</material>
     </gazebo>
 
+    <xacro:macro name="rack_pillar" params="prefix x_pos y_pos">
+        <joint name="${prefix}_pillar_joint" type="fixed">
+            <parent link="cargo_platform_link"/>
+            <child link="${prefix}_pillar_link"/>
+            <origin xyz="${x_pos} ${y_pos} ${rack_height/2}" rpy="0 0 0"/>
+        </joint>
+        <link name="${prefix}_pillar_link">
+            <visual>
+                <geometry>
+                    <cylinder radius="${pillar_radius}" length="${rack_height}"/>
+                </geometry>
+                <material name="silver"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder radius="${pillar_radius}" length="${rack_height}"/>
+                </geometry>
+            </collision>
+            <xacro:inertial_cylinder mass="1.5" radius="${pillar_radius}" length="${rack_height}">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+            </xacro:inertial_cylinder>
+        </link>
+        <gazebo reference="${prefix}_pillar_link">
+            <material>Gazebo/Grey</material>
+        </gazebo>
+    </xacro:macro>
 
+    <xacro:rack_pillar prefix="front_left" x_pos="0.25" y_pos="0.20"/>
+    <xacro:rack_pillar prefix="front_right" x_pos="0.25" y_pos="-0.20"/>
+    <xacro:rack_pillar prefix="rear_left" x_pos="-0.30" y_pos="0.20"/>
+    <xacro:rack_pillar prefix="rear_right" x_pos="-0.30" y_pos="-0.20"/>
+
+    <joint name="payload_rack_joint" type="fixed">
+        <parent link="cargo_platform_link"/>
+        <child link="payload_rack_link"/>
+        <origin xyz="-0.025 0 ${rack_height + rack_thickness/2}" rpy="0 0 0"/>
+    </joint>
+
+    <link name="payload_rack_link">
+        <visual>
+            <geometry>
+                <box size="${rack_length} ${rack_width} ${rack_thickness}"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="${rack_length} ${rack_width} ${rack_thickness}"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="3.0" x="${rack_length}" y="${rack_width}" z="${rack_thickness}">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link>
+
+    <gazebo reference="payload_rack_link">
+        <material>Gazebo/Blue</material>
+    </gazebo>
 
 </robot>
