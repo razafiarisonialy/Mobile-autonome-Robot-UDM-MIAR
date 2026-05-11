@@ -13,7 +13,7 @@ Utilisation :
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PythonExpression
@@ -65,6 +65,13 @@ def generate_launch_description():
         )
     )
 
+    # turtlebot3_navigation2 utilise PythonExpression([slam, ' and ', ...])
+    # → eval('false and True') → NameError. Il faut 'False'/'True' (Python).
+    # On normalise : 'true'/'True'/'1' → 'True', tout le reste → 'False'.
+    slam_py = PythonExpression(
+        ['"True" if "', slam, '" in ["true", "True", "1"] else "False"']
+    )
+
     # ── TurtleBot3 navigation2 (lève une erreur claire si non installé) ──
     try:
         tb3_nav_pkg = get_package_share_directory('turtlebot3_navigation2')
@@ -73,10 +80,11 @@ def generate_launch_description():
                 os.path.join(tb3_nav_pkg, 'launch', 'navigation2.launch.py')
             ),
             launch_arguments={
-                'map':          map_yaml,
-                'slam':         slam,
-                'use_sim_time': use_sim_time,
-                'params_file':  default_params,
+                'map':             map_yaml,
+                'slam':            slam_py,
+                'use_sim_time':    use_sim_time,
+                'params_file':     default_params,
+                'use_composition': 'False',
             }.items()
         )
     except Exception:
@@ -86,7 +94,13 @@ def generate_launch_description():
             '  sudo apt install ros-jazzy-turtlebot3-navigation2\n'
         )
 
+    # turtlebot3_navigation2 lit os.environ['TURTLEBOT3_MODEL'] directement.
+    # La valeur n'a aucun effet sur notre robot (nos params surchargent tout)
+    # mais la variable doit exister pour que le package ne plante pas.
+    set_tb3_model = SetEnvironmentVariable('TURTLEBOT3_MODEL', 'burger')
+
     return LaunchDescription([
+        set_tb3_model,
         declare_map,
         declare_slam,
         declare_use_sim_time,
