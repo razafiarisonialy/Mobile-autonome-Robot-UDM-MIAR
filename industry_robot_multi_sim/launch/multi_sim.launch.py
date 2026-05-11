@@ -1,5 +1,4 @@
 import os
-import sys
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription, GroupAction
@@ -19,7 +18,7 @@ def generate_launch_description():
     laser_filter_config = os.path.join(pkg_description, 'config', 'laser_filter.yaml')
     rviz_config         = os.path.join(pkg_multi_sim, 'rviz', 'multi_sim.rviz')
     
-    world_name = 'warehouse_world'
+    world_name = 'warehouse_world'  # Doit correspondre à <world name='...'> dans warehouse.sdf
 
     # Lancement de Gazebo
     gazebo = IncludeLaunchDescription(
@@ -155,7 +154,7 @@ def generate_launch_description():
                 laser_filter_config,
                 {
                     'use_sim_time': True,
-                    'filter1.params.box_frame': f'{name}/base_link',
+                    'filter1.params.box_frame': f'{name}/base_footprint',
                 }
             ],
             remappings=[

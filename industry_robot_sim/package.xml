@@ -17,8 +17,7 @@
   <depend>laser_filters</depend>
   <depend>rviz2</depend>
   <depend>xacro</depend>
-  <depend>industry_robot_localization</depend>
-  <depend>industry_robot_navigation</depend>
+
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

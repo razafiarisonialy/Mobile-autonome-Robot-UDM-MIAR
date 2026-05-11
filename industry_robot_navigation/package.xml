@@ -9,7 +9,7 @@
     comportements de récupération et suivi de waypoints.
     Architecture basée sur TurtleBot3 nav2_bringup.
   </description>
-  <maintainer email="naudecle@gmail.com">ubuntu</maintainer>
+  <maintainer email="razafiarisonialy@gmail.com">Ialy RAZAFIARISON</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
@@ -33,8 +33,7 @@
   <!-- Visualisation -->
   <depend>rviz2</depend>
 
-  <!-- Packages internes (dépendances inter-packages) -->
-  <exec_depend>industry_robot_sim</exec_depend>
+  <!-- Package interne (carte et URDF) -->
   <exec_depend>industry_robot_description</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
