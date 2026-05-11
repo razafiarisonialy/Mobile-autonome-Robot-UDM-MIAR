@@ -29,12 +29,16 @@ Le projet a évolué depuis un modèle basique vers une architecture robuste, in
 
 ### 5. Navigation Autonome Nav2
 - **Architecture TurtleBot3** : Adoption de l'approche standard `nav2_bringup` pour la navigation autonome, identique à TurtleBot3 Navigation.
+- **Deux fichiers launch** :
+  - `nav.launch.py` — launch complet du projet (Gazebo + Nav2 + RViz), arguments `use_sim`, `use_rviz`, `slam`, `map`
+  - `navigation2.launch.py` — wrapper du package `turtlebot3_navigation2`, interface identique à `ros2 launch turtlebot3_navigation2 navigation2.launch.py map:=...`
 - **Stack complète** : AMCL (localisation), NavfnPlanner (planification globale), DWB (contrôle local), Behavior Server (récupération).
 - **Adaptations clés** :
   - Footprint rectangulaire `1.06 × 0.86m` (châssis + pare-chocs + roues) au lieu du simple rayon circulaire de TurtleBot3.
   - Limites cinématiques calées sur `gazebo_control.xacro` : 1.0 m/s linéaire, 2.0 rad/s angulaire, accélérations 1.5 m/s² et 3.0 rad/s².
   - Topic `/scan_filtered` (pas `/scan`) pour éviter la self-detection dans les costmaps.
   - Inflation radius 0.75m (adapté au footprint du robot).
+- **Bug corrigé** : `slam.launch.py` transmettait `use_sim_time: True` hardcodé aux nodes Cartographer/RViz au lieu d'utiliser l'argument du launch — corrigé pour fonctionner correctement sur robot réel (`use_sim_time:=false`).
 
 ---
 
@@ -108,7 +112,14 @@ Le flux de travail complet pour passer de l'exploration à la navigation autonom
                          ▼
   ┌──────────────────────────────────────────────────────────────────────┐
   │  ÉTAPE 2 : NAVIGATION (Exploitation)                               │
+  │                                                                    │
+  │  Option A (projet complet) :                                       │
   │  ros2 launch industry_robot_navigation nav.launch.py               │
+  │                                                                    │
+  │  Option B (interface TurtleBot3) :                                 │
+  │  ros2 launch industry_robot_navigation navigation2.launch.py \     │
+  │    map:=$HOME/map.yaml                                             │
+  │                                                                    │
   │  → AMCL charge la carte et localise le robot                       │
   │  → "2D Pose Estimate" dans RViz pour la position initiale          │
   │  → "Nav2 Goal" dans RViz pour envoyer des objectifs                │
@@ -142,7 +153,10 @@ Les paramètres cinématiques sont synchronisés entre tous les fichiers de conf
 | **Simuler 1 robot** | `ros2 launch industry_robot_sim sim.launch.py` |
 | **Simuler 4 robots** | `ros2 launch industry_robot_multi_sim multi_sim.launch.py` |
 | **SLAM** | `ros2 launch industry_robot_slam slam.launch.py` |
-| **Navigation autonome** | `ros2 launch industry_robot_navigation nav.launch.py` |
+| **Navigation (projet)** | `ros2 launch industry_robot_navigation nav.launch.py` |
+| **Navigation (style TurtleBot3)** | `ros2 launch industry_robot_navigation navigation2.launch.py map:=$HOME/map.yaml` |
+| **Navigation + SLAM simultané** | `ros2 launch industry_robot_navigation nav.launch.py slam:=true` |
+| **Robot réel** | `ros2 launch industry_robot_navigation navigation2.launch.py use_sim_time:=false map:=$HOME/map.yaml` |
 | **Contrôler (clavier)** | `ros2 run teleop_twist_keyboard teleop_twist_keyboard` |
 | **Sauvegarder carte** | `ros2 run nav2_map_server map_saver_cli -f <chemin>/warehouse` |
 

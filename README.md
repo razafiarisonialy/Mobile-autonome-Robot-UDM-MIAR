@@ -81,7 +81,8 @@ sudo apt install -y \
   ros-jazzy-laser-filters \
   ros-jazzy-turtlebot3-cartographer \
   ros-jazzy-navigation2 \
-  ros-jazzy-nav2-bringup
+  ros-jazzy-nav2-bringup \
+  ros-jazzy-turtlebot3-navigation2
 ```
 
 ### 5. Cloner et compiler le projet
@@ -152,18 +153,16 @@ Gazebo + Nav2 (AMCL, Planner, Controller, Behaviors) + RViz2.
 
 **(La simulation sera lancée automatiquement par ce fichier launch)**
 
+**Méthode A — Via le launch du projet (`nav.launch.py`) :**
 ```bash
 ros2 launch industry_robot_navigation nav.launch.py
 ```
 
-**Arguments optionnels :**
+**Méthode B — Via le package TurtleBot3 (`navigation2.launch.py`) :**
 ```bash
-# Désactiver RViz (mode headless)
-ros2 launch industry_robot_navigation nav.launch.py use_rviz:=false
-
-# Mode robot réel (pas de simulation)
-ros2 launch industry_robot_navigation nav.launch.py use_sim:=false
+ros2 launch industry_robot_navigation navigation2.launch.py
 ```
+> La carte `warehouse.yaml` du projet est utilisée automatiquement.
 
 > **Utilisation dans RViz** :
 > 1. Attendez que tous les nœuds Nav2 soient en état **Active** (affiché dans le terminal).
@@ -357,15 +356,21 @@ sudo apt install ros-jazzy-navigation2 ros-jazzy-nav2-bringup
 
 ### Arguments du launch Navigation
 
+**`nav.launch.py`**
+
 | Argument | Défaut | Description |
 |----------|--------|-------------|
 | `use_sim` | `true` | Lancer Gazebo et utiliser l'horloge simulée |
 | `use_rviz` | `true` | Lancer RViz2 avec la config navigation |
+| `slam` | `false` | Mode SLAM Cartographer (true) ou AMCL + carte (false) |
+| `map` | `warehouse.yaml` | Chemin vers la carte YAML |
 
-```bash
-# Lancement standard (simulation + nav + rviz)
-ros2 launch industry_robot_navigation nav.launch.py
+**`navigation2.launch.py`** (interface TurtleBot3)
 
-# Sans RViz (mode headless / débogage)
-ros2 launch industry_robot_navigation nav.launch.py use_rviz:=false
-```
+| Argument | Défaut | Description |
+|----------|--------|-------------|
+| `use_sim_time` | `true` | Horloge simulée (true) ou robot réel (false) |
+| `use_sim` | `true` | Lancer Gazebo automatiquement |
+| `slam` | `false` | Mode SLAM (true) ou localisation (false) |
+| `map` | `warehouse.yaml` | Chemin vers la carte YAML |
+| `params_file` | `nav2_params.yaml` | Override des paramètres Nav2 |
