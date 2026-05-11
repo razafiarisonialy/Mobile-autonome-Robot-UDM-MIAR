@@ -63,7 +63,7 @@ def generate_launch_description():
         executable='cartographer_node',
         name='cartographer_node',
         output='screen',
-        parameters=[{'use_sim_time': True}],
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
         arguments=[
             '-configuration_directory', cartographer_config_dir,
             '-configuration_basename',  configuration_basename,
@@ -81,7 +81,7 @@ def generate_launch_description():
         executable='cartographer_occupancy_grid_node',
         name='cartographer_occupancy_grid_node',
         output='screen',
-        parameters=[{'use_sim_time': True}],
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
         arguments=[
             '-resolution',         resolution,
             '-publish_period_sec', publish_period_sec,
@@ -94,7 +94,7 @@ def generate_launch_description():
         executable='rviz2',
         name='rviz2',
         arguments=['-d', rviz_config],
-        parameters=[{'use_sim_time': True}],
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
         condition=IfCondition(use_rviz),
         output='screen',
     )

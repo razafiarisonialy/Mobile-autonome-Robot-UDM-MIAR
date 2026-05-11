@@ -1,5 +1,4 @@
 import os
-import sys
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription, GroupAction
@@ -19,7 +18,7 @@ def generate_launch_description():
     laser_filter_config = os.path.join(pkg_description, 'config', 'laser_filter.yaml')
     rviz_config         = os.path.join(pkg_multi_sim, 'rviz', 'multi_sim.rviz')
     
-    world_name = 'warehouse_world'
+    world_name = 'warehouse_world'  # Doit correspondre à <world name='...'> dans warehouse.sdf
 
     # Lancement de Gazebo
     gazebo = IncludeLaunchDescription(
@@ -133,14 +132,13 @@ def generate_launch_description():
                 f'/model/{name}/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
                 f'/world/{world_name}/model/{name}/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
                 f'/{name}/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
-                f'/model/{name}/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
+                f'/{name}/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
             ],
             remappings=[
                 (f'/model/{name}/cmd_vel', f'/{name}/cmd_vel'),
                 (f'/model/{name}/odometry', f'/{name}/odom'),
                 (f'/model/{name}/tf', '/tf'),
                 (f'/world/{world_name}/model/{name}/joint_state', f'/{name}/joint_states_gz'),
-                (f'/model/{name}/imu', f'/{name}/imu'),
             ],
             parameters=[{'use_sim_time': True}],
             output='screen'
@@ -156,7 +154,7 @@ def generate_launch_description():
                 laser_filter_config,
                 {
                     'use_sim_time': True,
-                    'filter1.params.box_frame': f'{name}/base_link',
+                    'filter1.params.box_frame': f'{name}/base_footprint',
                 }
             ],
             remappings=[

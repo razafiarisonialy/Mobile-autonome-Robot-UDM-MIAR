@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>industry_robot_navigation</name>
+  <version>1.0.0</version>
+  <description>
+    Navigation autonome Nav2 pour le robot mobile industriel (AMR).
+    Inclut AMCL, planification de chemin, contrôleur local DWB,
+    comportements de récupération et suivi de waypoints.
+    Architecture basée sur TurtleBot3 nav2_bringup.
+  </description>
+  <maintainer email="razafiarisonialy@gmail.com">Ialy RAZAFIARISON</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Nav2 stack complète (comme TurtleBot3) -->
+  <depend>navigation2</depend>
+  <depend>nav2_bringup</depend>
+
+  <!-- Sous-packages Nav2 explicites -->
+  <depend>nav2_costmap_2d</depend>
+  <depend>nav2_map_server</depend>
+  <depend>nav2_amcl</depend>
+  <depend>nav2_planner</depend>
+  <depend>nav2_controller</depend>
+  <depend>nav2_lifecycle_manager</depend>
+  <depend>nav2_bt_navigator</depend>
+  <depend>nav2_behaviors</depend>
+  <depend>nav2_waypoint_follower</depend>
+  <depend>nav2_velocity_smoother</depend>
+
+  <!-- Visualisation -->
+  <depend>rviz2</depend>
+
+  <!-- Packages internes -->
+  <exec_depend>industry_robot_description</exec_depend>
+  <exec_depend>industry_robot_sim</exec_depend>
+  <exec_depend>industry_robot_slam</exec_depend>
+
+  <!-- TurtleBot3 navigation (sudo apt install ros-jazzy-turtlebot3-navigation2) -->
+  <exec_depend>turtlebot3_navigation2</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
