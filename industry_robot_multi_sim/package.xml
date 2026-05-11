@@ -3,9 +3,9 @@
 <package format="3">
   <name>industry_robot_multi_sim</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="razafiarisonialy@gmail.com">root</maintainer>
-  <license>TODO: License declaration</license>
+  <description>Simulation multi-robots (flotte de 4 AMR) avec namespacing dans Gazebo Harmonic.</description>
+  <maintainer email="razafiarisonialy@gmail.com">Ialy RAZAFIARISON</maintainer>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

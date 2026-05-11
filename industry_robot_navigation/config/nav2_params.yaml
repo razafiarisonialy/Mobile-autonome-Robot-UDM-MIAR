@@ -1,143 +1,256 @@
+# ================================================================
+# nav2_params.yaml — Configuration Nav2 pour Industry Robot (Husky A300 Style)
+#
+# Basé sur la structure TurtleBot3 nav2_bringup, adapté pour :
+#   - Cinématique skid-steer (4 roues motrices)
+#   - Footprint rectangulaire 1.06 × 0.854 m (châssis + pare-chocs + roues)
+#   - LiDAR filtré sur /scan_filtered (portée 0.12–10 m)
+#   - Carte warehouse.yaml (résolution 0.05 m)
+#
+# Prérequis :
+#   sudo apt install ros-jazzy-navigation2 ros-jazzy-nav2-bringup
+# ================================================================
+
+# ──────────────────────────────────────────────────────────────────
+#  AMCL — Localisation par filtre à particules sur la carte
+# ──────────────────────────────────────────────────────────────────
 amcl:
   ros__parameters:
     use_sim_time: True
-    alpha1: 0.2
-    alpha2: 0.2
-    alpha3: 0.2
-    alpha4: 0.2
+
+    # ── Frames ──
+    global_frame_id: "map"
+    odom_frame_id: "odom"
     base_frame_id: "base_footprint"
-    scan_topic: "/scan_filtered" # Matches your Step 2 screenshot
-    robot_model_type: "nav2_amcl::DifferentialMotionModel" # Use this for skid-steer
+    scan_topic: "/scan_filtered"
 
-behavior_server:
-  ros__parameters:
-    use_sim_time: True
-    local_frame: odom
-    global_frame: map
-    robot_base_frame: base_footprint
-    transform_timeout: 0.1
-    plugins: ["spin", "backup", "wait"]
-    spin:
-      plugin: "nav2_behaviors::Spin"
-    backup:
-      plugin: "nav2_behaviors::BackUp"
-    wait:
-      plugin: "nav2_behaviors::Wait"
-    global_frame: map
-    robot_base_frame: base_footprint
-    transform_tolerance: 0.1
+    # ── Modèle de mouvement : Differential (Jazzy syntax) ──
+    robot_model_type: "nav2_amcl::DifferentialMotionModel"
+    alpha1: 0.2        # Bruit rotation dû à la rotation
+    alpha2: 0.2        # Bruit rotation dû à la translation
+    alpha3: 0.2        # Bruit translation dû à la translation
+    alpha4: 0.2        # Bruit translation dû à la rotation
+    alpha5: 0.2        # Bruit translation (spécifique omni/skid)
 
+    # ── Filtre à particules ──
+    max_particles: 3000
+    min_particles: 500
+    pf_err: 0.05
+    pf_z: 0.99
+    recovery_alpha_slow: 0.001
+    recovery_alpha_fast: 0.1
+    resample_interval: 1
+    update_min_a: 0.1   # Rotation minimale (0.1 rad)
+    update_min_d: 0.1   # Translation minimale (0.1 m)
+
+    # ── Modèle laser ──
+    laser_model_type: "likelihood_field"
+    laser_max_range: 10.0    # Cohérent avec lidar.xacro (max 10m)
+    laser_min_range: 0.12    # Cohérent avec lidar.xacro (min 0.12m)
+    max_beams: 180           # 360 samples / 2 pour performance
+    z_hit: 0.5
+    z_short: 0.05
+    z_max: 0.05
+    z_rand: 0.5
+    sigma_hit: 0.2
+    lambda_short: 0.1
+
+    # ── Pose initiale (position de spawn dans le monde) ──
+    set_initial_pose: True
+    initial_pose_x: 0.0
+    initial_pose_y: 0.0
+    initial_pose_z: 0.0
+    initial_pose_yaw: 0.0
+
+    # ── TF ──
+    transform_tolerance: 1.0
+    tf_broadcast: true
+
+# ──────────────────────────────────────────────────────────────────
+#  BT NAVIGATOR — Navigation par Behavior Tree
+# ──────────────────────────────────────────────────────────────────
 bt_navigator:
   ros__parameters:
     use_sim_time: True
     global_frame: map
     robot_base_frame: base_footprint
     odom_topic: /odom
-    default_bt_xml_filename: "navigate_to_pose_w_replanning_and_recovery.xml"
-
+    bt_loop_duration: 10
+    default_server_timeout: 20
+    navigators: ["navigate_to_pose", "navigate_through_poses"]
+    navigate_to_pose:
+      plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
+    navigate_through_poses:
+      plugin: "nav2_bt_navigator::NavigateThroughPosesNavigator"
+    # Note: plugin_lib_names supprimé — sous Jazzy les navigators enregistrent
+    # automatiquement tous leurs plugins BT (dont SmoothPath). Les lister ici
+    # causait une double registration → FATAL "ID [SmoothPath] already registered".
 controller_server:
   ros__parameters:
     use_sim_time: True
+    controller_frequency: 20.0
+    min_x_velocity_threshold: 0.001
+    min_y_velocity_threshold: 0.5     # Non pertinent (skid-steer)
+    min_theta_velocity_threshold: 0.001
+    failure_tolerance: 0.3
+    progress_checker_plugins: ["progress_checker"]
+    goal_checker_plugins: ["general_goal_checker"]
     controller_plugins: ["FollowPath"]
-    
+
+    # ── Progress Checker ──
+    progress_checker:
+      plugin: "nav2_controller::SimpleProgressChecker"
+      required_movement_radius: 0.5
+      movement_time_allowance: 10.0
+
+    # ── Goal Checker ──
+    general_goal_checker:
+      stateful: True
+      plugin: "nav2_controller::SimpleGoalChecker"
+      xy_goal_tolerance: 0.25     # Tolérance position (m)
+      yaw_goal_tolerance: 0.25    # Tolérance orientation (rad)
+
+    # ── DWB Local Planner — adapté Skid-Steer ──
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
       debug_trajectory_details: True
       min_vel_x: 0.0
-      max_vel_x: 0.26
-      max_vel_y: 0.0      # Set to 0 for skid-steer
-      max_vel_theta: 1.0
+      min_vel_y: 0.0
+      max_vel_x: 1.0              # Cohérent avec gazebo_control.xacro
+      max_vel_y: 0.0              # 0 pour skid-steer (pas de mouvement latéral)
+      max_vel_theta: 2.0          # Cohérent avec gazebo_control.xacro
       min_speed_xy: 0.0
-      max_speed_xy: 0.26
+      max_speed_xy: 1.0
       min_speed_theta: 0.0
+      acc_lim_x: 1.5              # Cohérent avec gazebo_control.xacro
+      acc_lim_y: 0.0
+      acc_lim_theta: 3.0          # Cohérent avec gazebo_control.xacro
+      decel_lim_x: -1.5
+      decel_lim_y: 0.0
+      decel_lim_theta: -3.0
       vx_samples: 20
+      vy_samples: 1               # 1 seul sample Y (pas de mouvement latéral)
       vtheta_samples: 40
+      sim_time: 1.5
+      linear_granularity: 0.05
+      angular_granularity: 0.025
+      transform_tolerance: 0.2
+      xy_goal_tolerance: 0.25
+      trans_stopped_velocity: 0.25
+      short_circuit_trajectory_evaluation: True
+      stateful: True
       critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
       BaseObstacle.scale: 0.02
       PathAlign.scale: 32.0
+      PathAlign.forward_point_distance: 0.1
       GoalAlign.scale: 24.0
+      GoalAlign.forward_point_distance: 0.1
       PathDist.scale: 32.0
       GoalDist.scale: 24.0
+      RotateToGoal.scale: 32.0
+      RotateToGoal.slowing_factor: 5.0
+      RotateToGoal.lookahead_time: -1.0
 
+# ──────────────────────────────────────────────────────────────────
+#  GLOBAL COSTMAP — Carte de coût globale (planification)
+# ──────────────────────────────────────────────────────────────────
 global_costmap:
-  global_costmap:
-    ros__parameters:
-      update_frequency: 1.0
-      publish_frequency: 1.0
-      global_frame: map
-      robot_base_frame: base_footprint
-      use_sim_time: True
-      robot_radius: 0.3
-      transform_tolerance: 0.5
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
-      static_layer:
-        plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: True
-        enabled: true
-        subscribe_to_updates: true
-      obstacle_layer:
-        plugin: "nav2_costmap_2d::ObstacleLayer"
-        enabled: True
-        observation_sources: scan
-        footprint_clearing_enabled: true
+  ros__parameters:
+    update_frequency: 1.0
+    publish_frequency: 1.0
+    global_frame: map
+    robot_base_frame: base_footprint
+    use_sim_time: True
+    # Footprint rectangulaire réel : châssis + pare-chocs + roues
+    # X = ±(0.90/2 + 0.08) = ±0.53m  |  Y = ±(0.37 + 0.114/2) = ±0.43m
+    footprint: "[[-0.53, -0.43], [-0.53, 0.43], [0.53, 0.43], [0.53, -0.43]]"
+    resolution: 0.05
+    track_unknown_space: true
+    transform_tolerance: 0.5
+    plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+    static_layer:
+      plugin: "nav2_costmap_2d::StaticLayer"
+      map_subscribe_transient_local: True
+      enabled: true
+      subscribe_to_updates: true
+    obstacle_layer:
+      plugin: "nav2_costmap_2d::ObstacleLayer"
+      enabled: True
+      observation_sources: scan
+      footprint_clearing_enabled: true
+      max_obstacle_height: 2.0
+      combination_method: 1
+      scan:
+        topic: /scan_filtered
+        obstacle_max_range: 2.5
+        obstacle_min_range: 0.0
+        raytrace_max_range: 3.0
+        raytrace_min_range: 0.0
         max_obstacle_height: 2.0
-        combination_method: 1
-        scan:
-          topic: /scan_filtered
-          obstacle_max_range: 2.5
-          obstacle_min_range: 0.0
-          raytrace_max_range: 3.0
-          raytrace_min_range: 0.0
-          max_obstacle_height: 2.0
-          min_obstacle_height: 0.0
-          clearing: True
-          marking: True
-          data_type: "LaserScan"
-          inf_is_valid: True
-      inflation_layer:
-        plugin: "nav2_costmap_2d::InflationLayer"
-        inflation_radius: 0.7  # Must be > 0.66 to clear the error
-        cost_scaling_factor: 3.0
+        min_obstacle_height: 0.0
+        clearing: True
+        marking: True
+        data_type: "LaserScan"
+        inf_is_valid: True
+    inflation_layer:
+      plugin: "nav2_costmap_2d::InflationLayer"
+      cost_scaling_factor: 3.0
+      # inflation_radius doit être > demi-diagonale du footprint
+      # demi-diagonale = sqrt(0.53² + 0.43²) ≈ 0.68m → on met 0.75m
+      inflation_radius: 0.75
 
+# ──────────────────────────────────────────────────────────────────
+#  LOCAL COSTMAP — Carte de coût locale (évitement réactif)
+# ──────────────────────────────────────────────────────────────────
 local_costmap:
-  local_costmap:
-    ros__parameters:
-      update_frequency: 5.0
-      publish_frequency: 2.0
-      global_frame: odom
-      robot_base_frame: base_footprint
-      use_sim_time: True
-      rolling_window: True
-      width: 3
-      height: 3
-      resolution: 0.05
-      robot_radius: 0.3
-      transform_tolerance: 0.5
-      plugins: ["obstacle_layer", "inflation_layer"]
-      obstacle_layer:
-        plugin: "nav2_costmap_2d::ObstacleLayer"
-        enabled: True
-        observation_sources: scan
-        footprint_clearing_enabled: true
+  ros__parameters:
+    update_frequency: 5.0
+    publish_frequency: 2.0
+    global_frame: odom
+    robot_base_frame: base_footprint
+    use_sim_time: True
+    rolling_window: True
+    width: 3
+    height: 3
+    resolution: 0.05
+    footprint: "[[-0.53, -0.43], [-0.53, 0.43], [0.53, 0.43], [0.53, -0.43]]"
+    transform_tolerance: 0.5
+    plugins: ["obstacle_layer", "inflation_layer"]
+    obstacle_layer:
+      plugin: "nav2_costmap_2d::ObstacleLayer"
+      enabled: True
+      observation_sources: scan
+      footprint_clearing_enabled: true
+      max_obstacle_height: 2.0
+      combination_method: 1
+      scan:
+        topic: /scan_filtered
+        obstacle_max_range: 2.5
+        obstacle_min_range: 0.0
+        raytrace_max_range: 3.0
+        raytrace_min_range: 0.0
         max_obstacle_height: 2.0
-        combination_method: 1
-        scan:
-          topic: /scan_filtered
-          obstacle_max_range: 2.5
-          obstacle_min_range: 0.0
-          raytrace_max_range: 3.0
-          raytrace_min_range: 0.0
-          max_obstacle_height: 2.0
-          min_obstacle_height: 0.0
-          clearing: True
-          marking: True
-          data_type: "LaserScan"
-          inf_is_valid: True
-      inflation_layer:
-        plugin: "nav2_costmap_2d::InflationLayer"
-        inflation_radius: 0.7  # Must be > 0.66 to clear the error
-        cost_scaling_factor: 3.0
+        min_obstacle_height: 0.0
+        clearing: True
+        marking: True
+        data_type: "LaserScan"
+        inf_is_valid: True
+    inflation_layer:
+      plugin: "nav2_costmap_2d::InflationLayer"
+      cost_scaling_factor: 3.0
+      inflation_radius: 0.75
 
+# ──────────────────────────────────────────────────────────────────
+#  MAP SERVER — Serveur de carte statique
+# ──────────────────────────────────────────────────────────────────
+map_server:
+  ros__parameters:
+    use_sim_time: True
+    yaml_filename: ""   # Surchargé par le launch file via l'argument 'map'
+
+# ──────────────────────────────────────────────────────────────────
+#  PLANNER SERVER — Planificateur global NavFn (A*)
+# ──────────────────────────────────────────────────────────────────
 planner_server:
   ros__parameters:
     expected_planner_frequency: 20.0
@@ -145,9 +258,105 @@ planner_server:
     planner_plugins: ["GridBased"]
     GridBased:
       plugin: "nav2_navfn_planner::NavfnPlanner"
+      tolerance: 0.5
+      use_astar: false          # Dijkstra par défaut (plus fiable en entrepôt)
+      allow_unknown: true
 
-lifecycle_manager:
+# ──────────────────────────────────────────────────────────────────
+#  BEHAVIOR SERVER — Comportements de récupération
+# ──────────────────────────────────────────────────────────────────
+behavior_server:
+  ros__parameters:
+    use_sim_time: True
+    local_costmap_topic: local_costmap/costmap_raw
+    global_costmap_topic: global_costmap/costmap_raw
+    local_footprint_topic: local_costmap/published_footprint
+    global_footprint_topic: global_costmap/published_footprint
+    cycle_frequency: 10.0
+    behavior_plugins: ["spin", "backup", "drive_on_heading", "wait"]
+    spin:
+      plugin: "nav2_behaviors::Spin"
+    backup:
+      plugin: "nav2_behaviors::BackUp"
+    drive_on_heading:
+      plugin: "nav2_behaviors::DriveOnHeading"
+    wait:
+      plugin: "nav2_behaviors::Wait"
+    local_frame: odom
+    global_frame: map
+    robot_base_frame: base_footprint
+    transform_tolerance: 0.1
+    simulate_ahead_time: 2.0
+    max_rotational_vel: 1.0
+    min_rotational_vel: 0.4
+    rotational_acc_lim: 3.0
+
+# ──────────────────────────────────────────────────────────────────
+#  WAYPOINT FOLLOWER — Suivi de points de passage
+# ──────────────────────────────────────────────────────────────────
+waypoint_follower:
+  ros__parameters:
+    use_sim_time: True
+    loop_rate: 20
+    stop_on_failure: false
+    waypoint_task_executor_plugin: "wait_at_waypoint"
+    wait_at_waypoint:
+      plugin: "nav2_waypoint_follower::WaitAtWaypoint"
+      enabled: True
+      waypoint_pause_duration: 200   # ms
+
+# ──────────────────────────────────────────────────────────────────
+#  VELOCITY SMOOTHER — Lissage des commandes de vitesse
+# ──────────────────────────────────────────────────────────────────
+velocity_smoother:
+  ros__parameters:
+    use_sim_time: True
+    smoothing_frequency: 20.0
+    scale_velocities: False
+    feedback: "OPEN_LOOP"
+    max_velocity: [1.0, 0.0, 2.0]        # [vx, vy, vtheta]
+    min_velocity: [-1.0, 0.0, -2.0]
+    max_accel: [1.5, 0.0, 3.0]
+    max_decel: [-1.5, 0.0, -3.0]
+    odom_topic: "odom"
+    odom_duration: 0.1
+    deadband_velocity: [0.0, 0.0, 0.0]
+
+# ──────────────────────────────────────────────────────────────────
+#  LIFECYCLE MANAGER — Gestionnaire de cycle de vie (Activation)
+# ──────────────────────────────────────────────────────────────────
+lifecycle_manager_navigation:
   ros__parameters:
     use_sim_time: True
     autostart: True
-    node_names: ['map_server', 'amcl', 'planner_server', 'controller_server', 'bt_navigator']
+    node_names: ['map_server', 'amcl', 'planner_server', 'controller_server', 'behavior_server', 'bt_navigator', 'waypoint_follower', 'velocity_smoother', 'collision_monitor', 'route_server', 'docking_server']
+
+# ──────────────────────────────────────────────────────────────────
+#  JAZZY SPECIFIC NODES (Collision Monitor, Route, Docking)
+# ──────────────────────────────────────────────────────────────────
+collision_monitor:
+  ros__parameters:
+    use_sim_time: True
+    base_frame_id: "base_footprint"
+    odom_frame_id: "odom"
+    transform_tolerance: 0.2
+    source_timeout: 1.0
+    stop_pub_timeout: 2.0
+    observation_sources: ["scan"]
+    scan:
+      type: "scan"
+      topic: "/scan_filtered"
+    polygons: ["footprint_polygon"]
+    footprint_polygon:
+      type: "polygon"
+      points: "[[-0.6, -0.5], [-0.6, 0.5], [0.6, 0.5], [0.6, -0.5]]"
+      action_type: "stop"
+
+
+route_server:
+  ros__parameters:
+    use_sim_time: True
+
+docking_server:
+  ros__parameters:
+    use_sim_time: True
