@@ -33,8 +33,13 @@
   <!-- Visualisation -->
   <depend>rviz2</depend>
 
-  <!-- Package interne (carte et URDF) -->
+  <!-- Packages internes -->
   <exec_depend>industry_robot_description</exec_depend>
+  <exec_depend>industry_robot_sim</exec_depend>
+  <exec_depend>industry_robot_slam</exec_depend>
+
+  <!-- TurtleBot3 navigation (sudo apt install ros-jazzy-turtlebot3-navigation2) -->
+  <exec_depend>turtlebot3_navigation2</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

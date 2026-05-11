@@ -324,6 +324,15 @@ velocity_smoother:
 
 # ──────────────────────────────────────────────────────────────────
 #  LIFECYCLE MANAGER — Gestionnaire de cycle de vie (Activation)
+#
+#  Note : nav2_bringup (navigation_launch.py + localization_launch.py)
+#  utilise des listes hardcodées pour node_names et ignore cette section.
+#  Les paramètres autostart/node_names ci-dessous sont transmis directement
+#  depuis les fichiers launch de nav2_bringup.
+#    - lifecycle_manager_localization : map_server, amcl
+#    - lifecycle_manager_navigation   : controller, smoother, planner,
+#      route, behavior, velocity_smoother, collision_monitor,
+#      bt_navigator, waypoint_follower, docking_server
 # ──────────────────────────────────────────────────────────────────
 lifecycle_manager_navigation:
   ros__parameters:
