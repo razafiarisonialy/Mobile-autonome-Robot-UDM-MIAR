@@ -3,10 +3,11 @@
 [![ROS 2](https://img.shields.io/badge/ROS%202-Jazzy%20Jalisco-blue)](https://docs.ros.org/en/jazzy/)
 [![Gazebo](https://img.shields.io/badge/Gazebo-Harmonic-orange)](https://gazebosim.org/)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04%20LTS-purple)](https://ubuntu.com/)
+[![Nav2](https://img.shields.io/badge/Nav2-Navigation%20Stack-brightgreen)](https://docs.nav2.org/)
 [![SLAM](https://img.shields.io/badge/SLAM-Cartographer-red)](https://google-cartographer-ros.readthedocs.io/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green)](LICENSE)
 
-Workspace ROS 2 complet pour la simulation et la cartographie d'un **robot mobile autonome (AMR)** destiné à un entrepôt de fabrication de cartons. Le robot est modélisé en Xacro modulaire, simulé sous Gazebo Harmonic, et cartographie son environnement via **Cartographer SLAM**.
+Workspace ROS 2 complet pour la simulation, la cartographie et la **navigation autonome** d'un **robot mobile autonome (AMR)** destiné à un entrepôt de fabrication de cartons. Le robot est modélisé en Xacro modulaire, simulé sous Gazebo Harmonic, cartographie son environnement via **Cartographer SLAM**, et navigue de façon autonome grâce à **Nav2**.
 
 ### Packages du workspace
 
@@ -16,6 +17,7 @@ Workspace ROS 2 complet pour la simulation et la cartographie d'un **robot mobil
 | `industry_robot_sim` | Simulation mono-robot (Gazebo + bridge + filtrage LiDAR) |
 | `industry_robot_multi_sim` | Simulation multi-robots (flotte de 4 AMR) |
 | `industry_robot_slam` | SLAM 2D Cartographer (cartographie temps réel) |
+| `industry_robot_navigation` | **Navigation autonome Nav2** (AMCL + planification + évitement d'obstacles) |
 
 > **Design inspiré** de l'architecture industrielle **Husky A300** de Clearpath Robotics, agrémenté d'une touche académique distinctive (UDM MIAR).
 
@@ -25,13 +27,16 @@ Workspace ROS 2 complet pour la simulation et la cartographie d'un **robot mobil
 
 | Élément | Dimensions | Détail |
 |---------|-----------|--------|
-| Châssis | 90 × 60 × 25 cm | Boîte rectangulaire robuste, **Jaune Industriel** |
-| Plateau supérieur | 85 × 60 × 2 cm | Fixé directement sur le châssis, Gris foncé, avec **Rails bleus UDM** |
+| Châssis | 90 × 54 × 25 cm | Boîte rectangulaire robuste |
+| Pare-chocs AV/AR | 8 × 62 × 11 cm | Protection avant et arrière |
 | 4 Roues motrices | Ø 33 cm, largeur 11.4 cm | Configuration Skid-steer type tout-terrain (μ=0.9) |
-| Mât Capteurs | Ø 10 cm × 20 cm | Mât central tubulaire |
+| Plateau supérieur | 82 × 48 × 4 cm | Fixé sur le châssis |
+| Mât Capteurs | Ø 12 cm × 12 cm | Mât central tubulaire |
 | LiDAR 2D | Ø 4 cm × 4 cm | 360°, portée 0.12–10 m, perché au sommet du mât |
 | IMU | 3 × 3 × 1 cm | Intégré au centre du châssis |
+| Rack de charge | 78 × 48 × 5 cm | Étagère de transport sur 4 piliers |
 | Masse totale | ~66 kg | Budget réaliste pour AMR industriel |
+| **Empreinte Nav2** | **106 × 86 cm** | Footprint rectangulaire (châssis + pare-chocs + roues) |
 
 **Cinématique** : Skid-steer (4 roues motrices)
 
@@ -75,10 +80,11 @@ sudo apt install -y \
   ros-jazzy-rviz2 \
   ros-jazzy-laser-filters \
   ros-jazzy-turtlebot3-cartographer \
-  ros-jazzy-nav2-map-server
+  ros-jazzy-navigation2 \
+  ros-jazzy-nav2-bringup
 ```
 
-### 4. Cloner et compiler le projet
+### 5. Cloner et compiler le projet
 
 ```bash
 # Créer le workspace (si pas déjà fait)
@@ -140,6 +146,30 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ros2 run nav2_map_server map_saver_cli -f ~/ros2_ws/src/Mobile-autonome-Robot-UDM-MIAR/industry_robot_description/maps/warehouse
 ```
 
+### Option 4 — Navigation Autonome (Nav2)
+Lance la stack complète de navigation autonome style **TurtleBot3** :
+Gazebo + Nav2 (AMCL, Planner, Controller, Behaviors) + RViz2.
+
+**(La simulation sera lancée automatiquement par ce fichier launch)**
+
+```bash
+ros2 launch industry_robot_navigation nav.launch.py
+```
+
+**Arguments optionnels :**
+```bash
+# Désactiver RViz (mode headless)
+ros2 launch industry_robot_navigation nav.launch.py use_rviz:=false
+
+# Mode robot réel (pas de simulation)
+ros2 launch industry_robot_navigation nav.launch.py use_sim:=false
+```
+
+> **Utilisation dans RViz** :
+> 1. Attendez que tous les nœuds Nav2 soient en état **Active** (affiché dans le terminal).
+> 2. Utilisez **« 2D Pose Estimate »** pour donner la position initiale du robot sur la carte.
+> 3. Utilisez **« Nav2 Goal »** pour envoyer un objectif — le robot planifie et s'y rend en évitant les obstacles.
+
 ---
 
 ## 🎮 Piloter le Robot
@@ -170,7 +200,13 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -r cmd_vel:=/rob
 | `/joint_states` | `sensor_msgs/JointState` | GZ → ROS | Position des roues (via `joint_state_publisher`) |
 | `/tf` | `tf2_msgs/TFMessage` | GZ → ROS | Transformations TF |
 | `/clock` | `rosgraph_msgs/Clock` | GZ → ROS | Horloge simulée |
-| `/map` | `nav_msgs/OccupancyGrid` | SLAM → ROS | Carte d'occupation construite par Cartographer |
+| `/map` | `nav_msgs/OccupancyGrid` | Nav2 → ROS | Carte d'occupation (chargée par `map_server`) |
+| `/plan` | `nav_msgs/Path` | Nav2 | Chemin global planifié |
+| `/local_plan` | `nav_msgs/Path` | Nav2 | Chemin local (DWB) |
+| `/global_costmap/costmap` | `nav2_msgs/Costmap` | Nav2 | Carte de coût globale |
+| `/local_costmap/costmap` | `nav2_msgs/Costmap` | Nav2 | Carte de coût locale |
+| `/initialpose` | `geometry_msgs/PoseWithCovarianceStamped` | RViz → AMCL | Pose initiale (2D Pose Estimate) |
+| `/goal_pose` | `geometry_msgs/PoseStamped` | RViz → Nav2 | Objectif de navigation (Nav2 Goal) |
 
 ### Commandes utiles de diagnostic
 
@@ -189,13 +225,17 @@ ros2 topic echo /scan_filtered --once
 
 # Visualiser l'arbre TF complet
 ros2 run tf2_tools view_frames
+
+# Vérifier l'état du lifecycle manager Nav2
+ros2 lifecycle list /controller_server
+ros2 lifecycle list /planner_server
 ```
 
 ---
 
 ## 🏭 Monde Gazebo — Usine de Cartons
 
-Le fichier `industry_robot_description/worlds/warehouse.sdf` modélise une usine de fabrication de cartons (~40 m × 28 m) chargé par `sim.launch.py` et `multi_sim.launch.py`.
+Le fichier `industry_robot_description/worlds/tugbot_warehouse.sdf` modélise une usine de fabrication de cartons (~40 m × 28 m) chargé par `sim.launch.py` et `multi_sim.launch.py`.
 
 | Zone | Rayonnages | Couleur sol |
 |------|-----------|-------------|
@@ -254,7 +294,7 @@ ros2 launch industry_robot_slam slam.launch.py use_rviz:=false
 Le robot détecte nativement ses propres surfaces dans le scan LiDAR brut (plateau cargo notamment). Deux couches de filtrage complémentaires sont en place :
 
 | Couche | Mécanisme | Fichier concerné |
-|--------|-----------|-----------------|
+|--------|-----------|--------------------|
 | **Filtre intrinsèque (URDF)** | `<collision>` retiré du `cargo_platform_link` → lien transparent au raycasting Gazebo | `urdf/robot_core.xacro` |
 | **Filtre logiciel** | Nœud `scan_to_scan_filter_chain` (`laser_filters`) masquant une boîte de 1.60 × 1.10 m autour du robot | `config/laser_filter.yaml` |
 
@@ -264,3 +304,68 @@ Dans **RViz**, deux displays sont disponibles :
 - 🔴 `/scan` — scan brut (rouge)
 - 🟢 `/scan_filtered` — obstacles externes uniquement (vert)
 
+---
+
+## 🗺️ Navigation Autonome (Nav2)
+
+Le package `industry_robot_navigation` intègre la stack complète **Nav2** (identique à l'approche **TurtleBot3**) pour permettre au robot de se déplacer de façon autonome dans l'entrepôt.
+
+### Prérequis Navigation
+
+```bash
+# Identique à TurtleBot3
+sudo apt install ros-jazzy-navigation2 ros-jazzy-nav2-bringup
+```
+
+### Architecture de Navigation
+
+```
+                    ┌─────────────────────────────────────────────┐
+                    │          BT Navigator (Behavior Tree)       │
+                    │    navigate_to_pose_w_replanning_and_recovery│
+                    └─────────┬──────────────┬───────────────┬────┘
+                              │              │               │
+                    ┌─────────▼──────┐ ┌─────▼────────┐ ┌────▼──────────┐
+                    │ Planner Server │ │  Controller   │ │   Behavior    │
+                    │  (NavFn / A*)  │ │  Server (DWB) │ │    Server     │
+                    └────────┬───────┘ └──────┬────────┘ │ (Spin/Backup) │
+                             │                │          └───────────────┘
+                    ┌────────▼───────┐ ┌──────▼────────┐
+                    │ Global Costmap │ │ Local Costmap  │
+                    │  (static +     │ │ (rolling 3×3m) │
+                    │   obstacle +   │ │                │
+                    │   inflation)   │ │                │
+                    └────────┬───────┘ └──────┬────────┘
+                             │                │
+                    ┌────────▼────────────────▼────────┐
+                    │        /scan_filtered             │
+                    │        /map (warehouse.yaml)      │
+                    └─────────────────────────────────-─┘
+```
+
+### Paramètres clés Nav2
+
+| Paramètre | Valeur | Description |
+|-----------|--------|-------------|
+| **Footprint** | `[[-0.53,-0.43], [-0.53,0.43], [0.53,0.43], [0.53,-0.43]]` | Empreinte réelle du robot (m) |
+| **Inflation** | 0.75m, cost_scaling=3.0 | Zone de sécurité autour des obstacles |
+| **Planificateur** | NavfnPlanner (Dijkstra) | Planification globale sur la carte |
+| **Contrôleur** | DWB Local Planner | Suivi de chemin et évitement réactif |
+| **Localisation** | AMCL (3000 particules) | Localisation par Monte Carlo sur la carte |
+| **Recovery** | Spin, Backup, DriveOnHeading, Wait | Déblocage automatique |
+| **Goal tolerance** | ±0.25m position, ±0.25rad orientation | Précision d'arrivée |
+
+### Arguments du launch Navigation
+
+| Argument | Défaut | Description |
+|----------|--------|-------------|
+| `use_sim` | `true` | Lancer Gazebo et utiliser l'horloge simulée |
+| `use_rviz` | `true` | Lancer RViz2 avec la config navigation |
+
+```bash
+# Lancement standard (simulation + nav + rviz)
+ros2 launch industry_robot_navigation nav.launch.py
+
+# Sans RViz (mode headless / débogage)
+ros2 launch industry_robot_navigation nav.launch.py use_rviz:=false
+```
