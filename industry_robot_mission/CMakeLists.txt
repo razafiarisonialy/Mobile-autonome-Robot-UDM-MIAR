@@ -28,6 +28,7 @@ ament_export_dependencies(rosidl_default_runtime)
 install(PROGRAMS
   scripts/mission_manager.py
   scripts/send_mission.py
+  scripts/calibrate_stations.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
