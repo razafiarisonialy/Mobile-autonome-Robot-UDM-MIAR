@@ -32,10 +32,12 @@ install(PROGRAMS
 )
 
 # Installation des répertoires de ressources partagées
+# Sans slash final sur config/launch : CMake installe le dossier lui-même,
+# créant share/industry_robot_mission/config/ et share/industry_robot_mission/launch/
 install(DIRECTORY
-  config/
-  launch/
-  DESTINATION share/${PROJECT_NAME}/
+  config
+  launch
+  DESTINATION share/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Outil CLI pour déclencher ou lister les missions logistiques AMR."""
+"""Outil CLI pour déclencher et suivre une mission logistique AMR."""
 
 import argparse
 import os
@@ -7,29 +7,36 @@ import sys
 
 import rclpy
 import yaml
+from rclpy.action import ActionClient
 from rclpy.node import Node
 
+from industry_robot_mission.action import ExecuteMission
 from industry_robot_mission.srv import StartMission
+
+# Timeout CLI pour attendre le résultat de la navigation (secondes)
+TIMEOUT_NAVIGATION_SEC = 900.0  # 15 minutes — couvre les missions les plus longues
 
 
 class ClientMission(Node):
-    """Nœud ROS 2 client du service mission_manager/start_mission."""
+    """Nœud ROS 2 client : valide la mission via le service, puis l'exécute via l'action."""
 
     def __init__(self):
-        """Initialise le client de service."""
+        """Initialise les clients service et action."""
         super().__init__('send_mission_cli')
-        self._client = self.create_client(StartMission, '/mission_manager/start_mission')
-
-    def envoyer_mission(self, nom_mission: str) -> bool:
-        """
-        Envoie une requête de démarrage de mission et affiche le résultat.
-
-        Retourne True si la mission est acceptée, False sinon.
-        """
-        self.get_logger().info(
-            f'Connexion au service /mission_manager/start_mission (timeout 5s)...'
+        self._client_service = self.create_client(
+            StartMission, '/mission_manager/start_mission'
         )
-        if not self._client.wait_for_service(timeout_sec=5.0):
+        self._client_action = ActionClient(
+            self, ExecuteMission, '/mission_manager/execute_mission'
+        )
+
+    def valider_mission(self, nom_mission: str) -> bool:
+        """
+        Appelle le service start_mission pour valider et afficher la liste des stations.
+
+        Retourne True si la mission est acceptée.
+        """
+        if not self._client_service.wait_for_service(timeout_sec=5.0):
             print(
                 '\nErreur : service /mission_manager/start_mission inaccessible.\n'
                 'Vérifiez que mission_manager est lancé :\n'
@@ -41,30 +48,96 @@ class ClientMission(Node):
         requete = StartMission.Request()
         requete.mission_name = nom_mission
 
-        future = self._client.call_async(requete)
+        future = self._client_service.call_async(requete)
         rclpy.spin_until_future_complete(self, future, timeout_sec=10.0)
 
         if future.result() is None:
+            print('\nErreur : pas de réponse du service (timeout 10s).', file=sys.stderr)
+            return False
+
+        reponse = future.result()
+        if not reponse.accepted:
+            print(f'\nMission refusée : {reponse.message}', file=sys.stderr)
+            return False
+
+        print(f'\nMission "{nom_mission}" validée.')
+        print(f'Message  : {reponse.message}')
+        print(f'\nStations à visiter ({len(reponse.stations_liste)}) :')
+        for i, station in enumerate(reponse.stations_liste, start=1):
+            print(f'  {i:2d}. {station}')
+        print()
+        return True
+
+    def executer_mission(self, nom_mission: str) -> bool:
+        """
+        Envoie le goal execute_mission et affiche la progression en temps réel.
+
+        Retourne True si la mission se termine avec succès.
+        """
+        if not self._client_action.wait_for_server(timeout_sec=10.0):
             print(
-                '\nErreur : pas de réponse du service (timeout 10s).',
+                '\nErreur : action /mission_manager/execute_mission inaccessible.',
                 file=sys.stderr,
             )
             return False
 
-        reponse = future.result()
+        goal = ExecuteMission.Goal()
+        goal.mission_name = nom_mission
 
-        if reponse.accepted:
-            print(f'\nMission "{nom_mission}" acceptée.')
-            print(f'Message : {reponse.message}')
-            print(f'\nStations à visiter ({len(reponse.stations_liste)}) :')
-            for i, station in enumerate(reponse.stations_liste, start=1):
-                print(f'  {i:2d}. {station}')
-            print()
-        else:
-            print(f'\nMission refusée : {reponse.message}', file=sys.stderr)
+        print(f'Démarrage de la navigation pour "{nom_mission}"...\n')
+
+        send_future = self._client_action.send_goal_async(
+            goal, feedback_callback=self._cb_feedback
+        )
+        rclpy.spin_until_future_complete(self, send_future, timeout_sec=30.0)
+
+        if not send_future.done() or send_future.result() is None:
+            print('\nErreur : pas de réponse du serveur d\'action (timeout 30s).', file=sys.stderr)
             return False
 
-        return True
+        goal_handle = send_future.result()
+        if not goal_handle.accepted:
+            print('\nErreur : goal refusé par mission_manager.', file=sys.stderr)
+            return False
+
+        print('Goal accepté — navigation en cours...\n')
+
+        result_future = goal_handle.get_result_async()
+        rclpy.spin_until_future_complete(
+            self, result_future, timeout_sec=TIMEOUT_NAVIGATION_SEC
+        )
+
+        if not result_future.done() or result_future.result() is None:
+            print(
+                f'\nErreur : pas de résultat après {TIMEOUT_NAVIGATION_SEC:.0f}s — '
+                'Nav2 peut être bloqué.',
+                file=sys.stderr,
+            )
+            return False
+
+        result_response = result_future.result()
+        resultat = result_response.result
+
+        if resultat.success:
+            print(f'\n✓ Mission terminée avec succès.')
+            print(f'  Stations visitées : {resultat.stations_visitees}')
+            print(f'  Message           : {resultat.message}')
+        else:
+            print(f'\n✗ Mission échouée.', file=sys.stderr)
+            print(f'  Stations visitées : {resultat.stations_visitees}', file=sys.stderr)
+            print(f'  Message           : {resultat.message}', file=sys.stderr)
+
+        return resultat.success
+
+    def _cb_feedback(self, feedback_msg):
+        """Affiche la progression en temps réel pendant la navigation."""
+        fb = feedback_msg.feedback
+        pct = int(fb.progression * 100)
+        # station_index = index courant (0-based), on affiche l'index suivant pour indiquer la cible
+        print(
+            f'  [{fb.statut:15s}] {fb.station_courante} '
+            f'({fb.station_index + 1}/{fb.station_total}) — {pct}%'
+        )
 
 
 def lister_missions_disponibles():
@@ -88,12 +161,11 @@ def lister_missions_disponibles():
             print()
 
         print('Utilisation :')
-        print('  ros2 run industry_robot_mission send_mission --name <nom_mission>')
+        print('  ros2 run industry_robot_mission send_mission.py --name <nom_mission>')
 
     except Exception as e:
         print(
-            f'\nImpossible de lire le fichier missions.yaml : {e}\n'
-            'Utilisez --name <nom_mission> pour déclencher une mission.',
+            f'\nImpossible de lire le fichier missions.yaml : {e}',
             file=sys.stderr,
         )
 
@@ -105,9 +177,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             'Exemples :\n'
-            '  ros2 run industry_robot_mission send_mission\n'
-            '  ros2 run industry_robot_mission send_mission --name approvisionnement\n'
-            '  ros2 run industry_robot_mission send_mission --name retour_base\n'
+            '  ros2 run industry_robot_mission send_mission.py\n'
+            '  ros2 run industry_robot_mission send_mission.py --name approvisionnement\n'
+            '  ros2 run industry_robot_mission send_mission.py --name retour_base\n'
         ),
     )
     parser.add_argument(
@@ -115,7 +187,7 @@ def main():
         type=str,
         default=None,
         metavar='NOM_MISSION',
-        help='Nom de la mission à déclencher',
+        help='Nom de la mission à déclencher et exécuter',
     )
     args = parser.parse_args()
 
@@ -127,10 +199,17 @@ def main():
     noeud = ClientMission()
 
     try:
-        succes = noeud.envoyer_mission(args.name)
+        # Étape 1 : validation via le service (affiche les stations)
+        if not noeud.valider_mission(args.name):
+            sys.exit(1)
+
+        # Étape 2 : exécution via l'action (déclenche la navigation)
+        succes = noeud.executer_mission(args.name)
         sys.exit(0 if succes else 1)
+
     except KeyboardInterrupt:
-        pass
+        print('\nInterruption clavier — mission annulée.')
+        sys.exit(1)
     finally:
         noeud.destroy_node()
         rclpy.shutdown()

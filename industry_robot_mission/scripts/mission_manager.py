@@ -33,14 +33,18 @@ class MissionManagerNode(Node):
         super().__init__('mission_manager')
 
         # --- Paramètres ---
-        self.declare_parameter('use_sim_time', True)
+        # use_sim_time est déclaré automatiquement par rclpy.Node — ne pas le re-déclarer
         self.declare_parameter('stations_file', '')
         self.declare_parameter('missions_file', '')
         self.declare_parameter('nav2_startup_delay', 5.0)
 
-        # --- Groupes de callbacks pour la concurrence ---
-        self.action_group = MutuallyExclusiveCallbackGroup()
-        self.service_group = ReentrantCallbackGroup()
+        # --- Groupes de callbacks ---
+        # IMPORTANT : les clients Nav2 doivent être dans un groupe SÉPARÉ du serveur d'action.
+        # Partager MutuallyExclusive crée un deadlock : le serveur tient le verrou et les
+        # callbacks internes des clients (réponse goal, résultat) ne peuvent jamais s'exécuter.
+        self._action_group = MutuallyExclusiveCallbackGroup()  # serveur d'action seul
+        self._nav2_group = ReentrantCallbackGroup()             # clients Nav2
+        self._service_group = ReentrantCallbackGroup()          # service start_mission
 
         # --- Données de configuration ---
         self._stations: dict = {}
@@ -55,7 +59,7 @@ class MissionManagerNode(Node):
             StartMission,
             '~/start_mission',
             self._cb_start_mission,
-            callback_group=self.service_group,
+            callback_group=self._service_group,
         )
 
         # --- Serveur d'action ~/execute_mission ---
@@ -64,21 +68,21 @@ class MissionManagerNode(Node):
             ExecuteMission,
             '~/execute_mission',
             self._cb_execute_mission,
-            callback_group=self.action_group,
+            callback_group=self._action_group,
         )
 
-        # --- Clients Nav2 ---
+        # --- Clients Nav2 (groupe séparé pour éviter le deadlock) ---
         self._client_follow_waypoints = ActionClient(
             self,
             FollowWaypoints,
             'follow_waypoints',
-            callback_group=self.action_group,
+            callback_group=self._nav2_group,
         )
         self._client_navigate_through_poses = ActionClient(
             self,
             NavigateThroughPoses,
             'navigate_through_poses',
-            callback_group=self.action_group,
+            callback_group=self._nav2_group,
         )
 
         # --- Délai de démarrage Nav2 (bloquant avant le spin) ---
@@ -196,13 +200,15 @@ class MissionManagerNode(Node):
             goal_handle.abort()
             return resultat
 
+        succes, stations_visitees, message = False, 0, ''
+
         # Première tentative
         succes, stations_visitees, message = await self._executer_nav2(
             goal_handle, nom_mission, publier_feedback=True
         )
 
-        # Deuxième tentative si la première échoue
-        if not succes:
+        # Deuxième tentative si la première échoue (et si pas de cancel demandé)
+        if not succes and not goal_handle.is_cancel_requested:
             self.get_logger().warn(
                 f'Première tentative échouée pour "{nom_mission}" — reprise en cours...'
             )
@@ -212,7 +218,7 @@ class MissionManagerNode(Node):
             )
 
         # Retour base automatique après double échec
-        if not succes:
+        if not succes and not goal_handle.is_cancel_requested:
             self.get_logger().error(
                 f'Double échec pour "{nom_mission}" — déclenchement retour_base.'
             )
@@ -225,7 +231,12 @@ class MissionManagerNode(Node):
         resultat.message = message
         resultat.stations_visitees = stations_visitees
 
-        if succes:
+        # Résolution du goal — vérifier si le client a demandé un cancel
+        if goal_handle.is_cancel_requested:
+            self.get_logger().warn('Cancel demandé par le client — mission annulée.')
+            self._publier_statut('MISSION_ANNULEE — cancel client')
+            goal_handle.canceled()
+        elif succes:
             goal_handle.succeed()
         else:
             goal_handle.abort()
@@ -276,9 +287,9 @@ class MissionManagerNode(Node):
             f'DÉPART "{nom_mission}" — {nb_stations} station(s) via {type_action.__name__}'
         )
 
-        # Callback feedback local (capturé par closure)
+        # Callback feedback local capturé par closure
         def cb_feedback_nav2(fb_msg):
-            if publier_feedback:
+            if publier_feedback and not goal_handle.is_cancel_requested:
                 self._cb_feedback_nav2(fb_msg, goal_handle, noms_stations)
 
         # Envoi du goal et attente de l'acceptation (timeout 30s)
@@ -289,7 +300,7 @@ class MissionManagerNode(Node):
             )
         except asyncio.TimeoutError:
             self.get_logger().error('Timeout attente acceptation du goal Nav2 (30s).')
-            return False, 0, 'Timeout lors de l\'envoi du goal Nav2.'
+            return False, 0, "Timeout lors de l'envoi du goal Nav2."
 
         if not gh_nav2.accepted:
             self.get_logger().error('Goal Nav2 refusé par le serveur.')
@@ -305,22 +316,28 @@ class MissionManagerNode(Node):
             self.get_logger().error(
                 f'Timeout mission atteint ({timeout_sec:.0f}s) — annulation du goal Nav2.'
             )
-            await gh_nav2.cancel_goal_async()
+            await self._attendre_future(gh_nav2.cancel_goal_async())
             self._publier_statut('MISSION_ECHEC — timeout')
             return False, 0, f'Timeout mission ({timeout_sec:.0f}s) atteint.'
 
-        # Analyse du résultat
         return self._analyser_resultat_nav2(
             result_response, type_action, nom_mission, noms_stations, nb_stations,
             goal_handle, publier_feedback
         )
 
     def _analyser_resultat_nav2(
-        self, result_response, type_action, nom_mission: str,
-        noms_stations: list, nb_stations: int, goal_handle, publier_feedback: bool
+        self,
+        result_response,
+        type_action,
+        nom_mission: str,
+        noms_stations: list,
+        nb_stations: int,
+        goal_handle,
+        publier_feedback: bool,
     ) -> tuple:
         """Analyse le résultat Nav2 et retourne (succès, stations_visitées, message)."""
-        # FollowWaypoints : résultat via missed_waypoints
+        stations_visitees = 0
+
         if type_action == FollowWaypoints:
             missed = list(result_response.result.missed_waypoints)
             stations_visitees = nb_stations - len(missed)
@@ -332,7 +349,7 @@ class MissionManagerNode(Node):
                 self.get_logger().warn(f'Stations manquées : {noms_manques}')
                 self._publier_statut(f'ECHEC_PARTIEL — stations manquées : {noms_manques}')
 
-                if publier_feedback:
+                if publier_feedback and not goal_handle.is_cancel_requested:
                     fb = ExecuteMission.Feedback()
                     fb.station_courante = ''
                     fb.station_index = stations_visitees
@@ -347,8 +364,7 @@ class MissionManagerNode(Node):
                     f'Mission "{nom_mission}" — {stations_visitees}/{nb_stations} stations atteintes.'
                 )
 
-        # NavigateThroughPoses : résultat via error_code
-        else:
+        else:  # NavigateThroughPoses
             error_code = getattr(result_response.result, 'error_code', 0)
             stations_visitees = nb_stations if error_code == 0 else 0
 
