@@ -1,0 +1,5 @@
+string mission_name
+---
+bool accepted
+string message
+string[] stations_liste

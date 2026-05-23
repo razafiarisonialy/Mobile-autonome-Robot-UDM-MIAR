@@ -1,0 +1,33 @@
+# Coordonnées des stations logistiques dans le repère map.
+# PLACEHOLDERS — à ajuster avec RViz selon la carte warehouse réelle.
+# Le robot spawn à (0, 0, 0) : base_charge correspond à la pose de spawn.
+stations:
+  base_charge:
+    x: 0.0
+    y: 0.0
+    yaw: 0.0
+    description: "Base de recharge — point de départ et de retour"
+
+  matieres_premieres:
+    x: -5.0
+    y: 8.0
+    yaw: 0.0
+    description: "Zone de réception des bobines de papier"
+
+  poste_decoupe:
+    x: 5.0
+    y: 8.0
+    yaw: 1.5708
+    description: "Machines de découpe et rainurage"
+
+  controle_qualite:
+    x: 8.0
+    y: 0.0
+    yaw: 3.1416
+    description: "Station d'inspection des cartons finis"
+
+  expedition:
+    x: 0.0
+    y: -8.0
+    yaw: -1.5708
+    description: "Quai d'expédition"

@@ -18,6 +18,7 @@ Workspace ROS 2 complet pour la simulation, la cartographie et la **navigation a
 | `industry_robot_multi_sim` | Simulation multi-robots (flotte de 4 AMR) |
 | `industry_robot_slam` | SLAM 2D Cartographer (cartographie temps réel) |
 | `industry_robot_navigation` | **Navigation autonome Nav2** (AMCL + planification + évitement d'obstacles) |
+| `industry_robot_mission` | **Missions logistiques** — orchestration multi-stations via Nav2 FollowWaypoints |
 
 > **Design inspiré** de l'architecture industrielle **Husky A300** de Clearpath Robotics, agrémenté d'une touche académique distinctive (UDM MIAR).
 
@@ -374,3 +375,150 @@ sudo apt install ros-jazzy-navigation2 ros-jazzy-nav2-bringup
 | `slam` | `false` | Mode SLAM (true) ou localisation (false) |
 | `map` | `warehouse.yaml` | Chemin vers la carte YAML |
 | `params_file` | `nav2_params.yaml` | Override des paramètres Nav2 |
+
+---
+
+## 🏭 Missions Logistiques (`industry_robot_mission`)
+
+Le package `industry_robot_mission` orchestre des **missions multi-stations** dans l'entrepôt. Il pilote Nav2 via l'action `FollowWaypoints` pour enchaîner automatiquement les arrêts logistiques (collecte, découpe, contrôle qualité, expédition…).
+
+### Architecture du système de mission
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                  mission_manager (nœud)                  │
+│                                                          │
+│  Service  ~/start_mission  ◄──── send_mission CLI        │
+│  Action   ~/execute_mission ◄─── client externe          │
+│  Publisher /mission_status  ────► monitoring             │
+│                                                          │
+│            ┌────────────────────────┐                    │
+│            │  stations.yaml         │  config/           │
+│            │  missions.yaml         │  embarquée         │
+│            └────────────────────────┘                    │
+│                        │                                 │
+│                        ▼                                 │
+│  Action Client  follow_waypoints ──► Nav2 waypoint_follower
+│  Fallback       navigate_through_poses (si FW indispo)   │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Stations et missions préconfigurées
+
+**Stations** (`config/stations.yaml`) — coordonnées dans le repère `map` :
+
+| Station | x (m) | y (m) | yaw (rad) | Rôle |
+|---------|-------|-------|-----------|------|
+| `base_charge` | 0.0 | 0.0 | 0.0 | Point de départ / retour (pose de spawn) |
+| `matieres_premieres` | -5.0 | 8.0 | 0.0 | Réception des bobines de papier |
+| `poste_decoupe` | 5.0 | 8.0 | π/2 | Machines de découpe et rainurage |
+| `controle_qualite` | 8.0 | 0.0 | π | Inspection des cartons finis |
+| `expedition` | 0.0 | -8.0 | -π/2 | Quai d'expédition |
+
+> ⚠️ Ces coordonnées sont des **placeholders**. Utilisez **RViz → 2D Nav Goal** pour relever les vraies positions, puis mettez à jour `config/stations.yaml`.
+
+**Missions** (`config/missions.yaml`) :
+
+| Mission | Séquence de stations |
+|---------|---------------------|
+| `approvisionnement` | base_charge → matieres_premieres → poste_decoupe → base_charge |
+| `cycle_complet` | matieres_premieres → poste_decoupe → controle_qualite → expedition → base_charge |
+| `retour_base` | base_charge *(retour d'urgence automatique)* |
+| `inspection_qualite` | base_charge → controle_qualite → expedition → base_charge |
+
+### Lancement — Option 5
+
+**Terminal 1** — Navigation + Gazebo (prérequis) :
+```bash
+ros2 launch industry_robot_navigation nav.launch.py
+```
+
+**Terminal 2** — Mission manager :
+```bash
+ros2 launch industry_robot_mission mission.launch.py
+```
+
+> Arguments optionnels :
+> ```bash
+> ros2 launch industry_robot_mission mission.launch.py \
+>   use_sim_time:=true \
+>   stations_file:=/chemin/absolu/stations.yaml \
+>   missions_file:=/chemin/absolu/missions.yaml
+> ```
+
+### Commandes de mission
+
+**Lister les missions disponibles :**
+```bash
+ros2 run industry_robot_mission send_mission.py
+```
+
+**Déclencher une mission par son nom :**
+```bash
+# Mission d'approvisionnement
+ros2 run industry_robot_mission send_mission.py --name approvisionnement
+
+# Cycle de production complet
+ros2 run industry_robot_mission send_mission.py --name cycle_complet
+
+# Retour d'urgence à la base
+ros2 run industry_robot_mission send_mission.py --name retour_base
+
+# Ronde de contrôle qualité
+ros2 run industry_robot_mission send_mission.py --name inspection_qualite
+```
+
+**Appel direct du service ROS 2 (sans le CLI) :**
+```bash
+ros2 service call /mission_manager/start_mission \
+  industry_robot_mission/srv/StartMission \
+  "{mission_name: 'approvisionnement'}"
+```
+
+**Déclencher via l'action `execute_mission` (avec feedback en temps réel) :**
+```bash
+ros2 action send_goal /mission_manager/execute_mission \
+  industry_robot_mission/action/ExecuteMission \
+  "{mission_name: 'approvisionnement'}"
+```
+
+**Suivi du statut en temps réel :**
+```bash
+# Affiche chaque changement d'état (EN_ROUTE, ARRIVE, ECHEC_PARTIEL…)
+ros2 topic echo /mission_status
+```
+
+### Interfaces ROS 2 exposées
+
+| Interface | Nom | Type | Description |
+|-----------|-----|------|-------------|
+| Service | `/mission_manager/start_mission` | `StartMission` | Valide et retourne la liste des stations |
+| Action | `/mission_manager/execute_mission` | `ExecuteMission` | Exécute la mission avec feedback de progression |
+| Publisher | `/mission_status` | `std_msgs/String` | Statut textuel en continu |
+
+### Comportements automatiques
+
+| Situation | Comportement |
+|-----------|-------------|
+| Waypoint manqué (`missed_waypoints` non vide) | Log `ECHEC_PARTIEL` + réessai automatique |
+| Échec Nav2 (1ère fois) | Relance la même mission une fois |
+| Échec Nav2 (2ème fois) | Déclenche automatiquement `retour_base` |
+| Timeout dépassé (`nb_stations × 120s`, min 300s) | Annule le goal Nav2 + déclenche `retour_base` |
+| `FollowWaypoints` indisponible | Repli automatique sur `NavigateThroughPoses` |
+
+### Ajuster les coordonnées des stations
+
+1. Lancer la simulation + Nav2 :
+   ```bash
+   ros2 launch industry_robot_navigation nav.launch.py
+   ```
+2. Dans **RViz**, activer l'outil **"Publish Point"** (barre d'outils) et cliquer sur la carte pour lire les coordonnées dans la console.
+3. Ou utiliser **"2D Nav Goal"** et observer les valeurs dans :
+   ```bash
+   ros2 topic echo /goal_pose --once
+   ```
+4. Mettre à jour `industry_robot_mission/config/stations.yaml` avec les nouvelles valeurs `x`, `y`, `yaw`.
+5. Recompiler (si pas de `--symlink-install`) :
+   ```bash
+   colcon build --packages-select industry_robot_mission
+   ```
