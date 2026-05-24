@@ -37,6 +37,7 @@ def generate_launch_description():
     params_file    = os.path.join(nav_pkg,  'config', 'nav2_params.yaml')
     default_map    = os.path.join(desc_pkg, 'maps',   'warehouse.yaml')
     rviz_config    = os.path.join(nav_pkg,  'rviz',   'nav.rviz')
+    nogoZone_map   = os.path.join(desc_pkg, 'maps',   'keepOut.yaml')
 
     # ── Arguments ────────────────────────────────────────────────────────────
     use_sim  = LaunchConfiguration('use_sim')
@@ -56,7 +57,15 @@ def generate_launch_description():
         description='Chemin vers le fichier YAML de la carte')
 
     # ── Nœuds du lifecycle_manager_localization ───────────────────────────────
-    localization_nodes = ['map_server', 'amcl']
+    # filter_mask_server et costmap_filter_info_server DOIVENT être activés
+    # AVANT les costmaps (controller_server, planner_server) pour que le
+    # KeepoutFilter reçoive le mask au moment de son initialisation.
+    localization_nodes = [
+        'map_server',
+        'amcl',
+        'filter_mask_server',
+        'costmap_filter_info_server',
+    ]
 
     # ── Nœuds du lifecycle_manager_navigation ────────────────────────────────
     # docking_server volontairement EXCLU : non utilisé dans ce projet.
@@ -96,6 +105,27 @@ def generate_launch_description():
         name='amcl',
         output='screen',
         parameters=[params_file, {'use_sim_time': use_sim}]
+    )
+
+    
+
+    filter_mask_server_node = Node(
+        package='nav2_map_server',
+        executable='map_server',
+        name='filter_mask_server',
+        output='screen',
+        parameters=[
+            params_file,          # Load the default configurations first
+            {'yaml_filename': nogoZone_map}  # Override with the dynamic path!
+        ]
+    )
+
+    costmap_filter_info_server_node = Node(
+        package='nav2_map_server',
+        executable='costmap_filter_info_server',
+        name='costmap_filter_info_server', # <-- Match this name as well
+        output='screen',
+        parameters=[params_file]
     )
 
     # ── 2c. Lifecycle Manager — Localisation ─────────────────────────────────
@@ -220,6 +250,8 @@ def generate_launch_description():
         # Localisation
         map_server,
         amcl,
+        filter_mask_server_node,
+        costmap_filter_info_server_node,
         lifecycle_manager_loc,
         # Navigation
         controller_server,

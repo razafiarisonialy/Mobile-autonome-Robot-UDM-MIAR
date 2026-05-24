@@ -6,9 +6,14 @@
 # plateau cargo, des rails lateraux et des supports.
 #
 # Boite definie dans le repere base_footprint :
-#   x : [-0.80, 0.80]  -> couvre chassis, plateau cargo et pare-chocs
+#   x : [-0.55, 0.55]  -> chassis uniquement (demi-longueur 0.50m + 5cm marge)
 #   y : [-0.55, 0.55]  -> couvre roues, rails lateraux et supports
 #   z : [-0.10, 0.90]  -> couvre toute la hauteur utile du robot
+#
+# IMPORTANT : la boite doit etre aussi petite que possible pour ne pas
+# masquer les obstacles proches necessaires au collision_monitor et aux
+# costmaps. L'ancienne valeur x=±0.80 creait une zone aveugle de 30cm
+# devant/derriere le robot.
 #
 # Les points a l'interieur de cette boite sont supprimes (invert: false).
 # ================================================================
@@ -20,8 +25,8 @@
       name: filtre_self_detection
       params:
         box_frame: base_footprint
-        min_x: -0.80
-        max_x: 0.80
+        min_x: -0.55
+        max_x: 0.55
         min_y: -0.55
         max_y: 0.55
         min_z: -0.10
