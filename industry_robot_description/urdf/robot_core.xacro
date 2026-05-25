@@ -135,8 +135,8 @@
         </link>
         <gazebo reference="${prefix}_left_wheel_link">
             <material>Gazebo/FlatBlack</material>
-            <mu1>0.9</mu1>
-            <mu2>0.05</mu2>
+            <mu1>1.0</mu1>
+            <mu2>0.2</mu2>
             <fdir1>1 0 0</fdir1>
         </gazebo>
     </xacro:macro>
@@ -166,8 +166,8 @@
         </link>
         <gazebo reference="${prefix}_right_wheel_link">
             <material>Gazebo/FlatBlack</material>
-            <mu1>0.9</mu1>
-            <mu2>0.05</mu2>
+            <mu1>1.0</mu1>
+            <mu2>0.2</mu2>
             <fdir1>1 0 0</fdir1>
         </gazebo>
     </xacro:macro>
