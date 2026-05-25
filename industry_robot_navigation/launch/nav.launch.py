@@ -56,7 +56,10 @@ def generate_launch_description():
         description='Chemin vers le fichier YAML de la carte')
 
     # ── Nœuds du lifecycle_manager_localization ───────────────────────────────
-    localization_nodes = ['map_server', 'amcl']
+    localization_nodes = [
+        'map_server',
+        'amcl',
+    ]
 
     # ── Nœuds du lifecycle_manager_navigation ────────────────────────────────
     # docking_server volontairement EXCLU : non utilisé dans ce projet.
@@ -97,6 +100,7 @@ def generate_launch_description():
         output='screen',
         parameters=[params_file, {'use_sim_time': use_sim}]
     )
+
 
     # ── 2c. Lifecycle Manager — Localisation ─────────────────────────────────
     lifecycle_manager_loc = Node(
