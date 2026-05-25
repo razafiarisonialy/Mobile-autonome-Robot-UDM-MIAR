@@ -38,7 +38,7 @@ amcl:
     pf_err: 0.05
     pf_z: 0.99
     recovery_alpha_slow: 0.001
-    recovery_alpha_fast: 0.1
+    recovery_alpha_fast: 0.05
     resample_interval: 1
     update_min_a: 0.1   # Rotation minimale (0.1 rad)
     update_min_d: 0.1   # Translation minimale (0.1 m)
@@ -375,15 +375,17 @@ collision_monitor:
     polygons: ["slowdown_polygon", "stop_polygon"]
     slowdown_polygon:
       type: "polygon"
-      # Zone extérieure (~40 cm au-delà du châssis) — décélération progressive
-      points: "[[-1.0, -0.7], [-1.0, 0.7], [1.0, 0.7], [1.0, -0.7]]"
+      # Zone extérieure (~30 cm au-delà du châssis) — décélération progressive
+      # Calcul: footprint half-dimensions (x=0.53, y=0.43) + 0.30 m
+      points: "[[-0.83, -0.73], [-0.83, 0.73], [0.83, 0.73], [0.83, -0.73]]"
       action_type: "slowdown"
       max_points: 3
       slowdown_ratio: 0.3
     stop_polygon:
       type: "polygon"
-      # Zone intérieure (~10 cm au-delà du châssis) — arrêt d'urgence
-      points: "[[-0.65, -0.50], [-0.65, 0.50], [0.65, 0.50], [0.65, -0.50]]"
+      # Zone intérieure (~20 cm au-delà du châssis) — arrêt d'urgence
+      # Calcul: footprint half-dimensions (x=0.53, y=0.43) + 0.20 m
+      points: "[[-0.73, -0.63], [-0.73, 0.63], [0.73, 0.63], [0.73, -0.63]]"
       action_type: "stop"
       max_points: 3
 
