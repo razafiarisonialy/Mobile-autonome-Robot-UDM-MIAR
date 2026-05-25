@@ -16,7 +16,7 @@
 # ──────────────────────────────────────────────────────────────────
 amcl:
   ros__parameters:
-    use_sim_time: True
+    use_sim_time: true
 
     # ── Frames ──
     global_frame_id: "map"
@@ -26,11 +26,11 @@ amcl:
 
     # ── Modèle de mouvement : Differential (Jazzy syntax) ──
     robot_model_type: "nav2_amcl::DifferentialMotionModel"
-    alpha1: 0.2        # Bruit rotation dû à la rotation
-    alpha2: 0.2        # Bruit rotation dû à la translation
-    alpha3: 0.2        # Bruit translation dû à la translation
-    alpha4: 0.2        # Bruit translation dû à la rotation
-    alpha5: 0.2        # Bruit translation (spécifique omni/skid)
+    alpha1: 0.1        # Bruit rotation dû à la rotation
+    alpha2: 0.1        # Bruit rotation dû à la translation
+    alpha3: 0.1        # Bruit translation dû à la translation
+    alpha4: 0.1        # Bruit translation dû à la rotation
+    # alpha5: 0.5        # Bruit translation (spécifique omni/skid)
 
     # ── Filtre à particules ──
     max_particles: 3000
@@ -56,26 +56,33 @@ amcl:
     lambda_short: 0.1
 
     # ── Pose initiale (position de spawn dans le monde) ──
-    set_initial_pose: True
+    set_initial_pose: true
     initial_pose_x: 0.0
     initial_pose_y: 0.0
     initial_pose_z: 0.0
     initial_pose_yaw: 0.0
 
     # ── TF ──
-    transform_tolerance: 1.0
+    transform_tolerance: 0.3
     tf_broadcast: true
+    # ── QoS Overrides for Jazzy ──
+    qos_overrides:
+      /particle_cloud:
+        publisher:
+          reliability: reliable
+          durability: transient_local
 
 # ──────────────────────────────────────────────────────────────────
 #  BT NAVIGATOR — Navigation par Behavior Tree
 # ──────────────────────────────────────────────────────────────────
 bt_navigator:
   ros__parameters:
-    use_sim_time: True
+    use_sim_time: true
     global_frame: map
     robot_base_frame: base_footprint
     odom_topic: /odom
     bt_loop_duration: 10
+    transform_tolerance: 0.5
     default_server_timeout: 20
     navigators: ["navigate_to_pose", "navigate_through_poses"]
     navigate_to_pose:
@@ -87,8 +94,8 @@ bt_navigator:
     # causait une double registration → FATAL "ID [SmoothPath] already registered".
 controller_server:
   ros__parameters:
-    use_sim_time: True
-    controller_frequency: 20.0
+    use_sim_time: true
+    controller_frequency: 7.0
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5     # Non pertinent (skid-steer)
     min_theta_velocity_threshold: 0.001
@@ -105,7 +112,7 @@ controller_server:
 
     # ── Goal Checker ──
     general_goal_checker:
-      stateful: True
+      stateful: true
       plugin: "nav2_controller::SimpleGoalChecker"
       xy_goal_tolerance: 0.25     # Tolérance position (m)
       yaw_goal_tolerance: 0.25    # Tolérance orientation (rad)
@@ -113,7 +120,7 @@ controller_server:
     # ── DWB Local Planner — adapté Skid-Steer ──
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
-      debug_trajectory_details: True
+      debug_trajectory_details: true
       min_vel_x: 0.0
       min_vel_y: 0.0
       max_vel_x: 1.0              # Cohérent avec gazebo_control.xacro
@@ -128,19 +135,19 @@ controller_server:
       decel_lim_x: -1.5
       decel_lim_y: 0.0
       decel_lim_theta: -3.0
-      vx_samples: 20
-      vy_samples: 1               # 1 seul sample Y (pas de mouvement latéral)
-      vtheta_samples: 40
+      vx_samples: 10
+      vy_samples: 0               # 1 seul sample Y (pas de mouvement latéral)
+      vtheta_samples: 15
       sim_time: 1.5
       linear_granularity: 0.05
       angular_granularity: 0.025
-      transform_tolerance: 0.2
+      transform_tolerance: 0.3
       xy_goal_tolerance: 0.25
       trans_stopped_velocity: 0.25
-      short_circuit_trajectory_evaluation: True
-      stateful: True
+      short_circuit_trajectory_evaluation: true
+      stateful: true
       critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-      BaseObstacle.scale: 0.02
+      BaseObstacle.scale: 0.5
       PathAlign.scale: 32.0
       PathAlign.forward_point_distance: 0.1
       GoalAlign.scale: 24.0
@@ -160,22 +167,23 @@ global_costmap:
     publish_frequency: 1.0
     global_frame: map
     robot_base_frame: base_footprint
-    use_sim_time: True
+    use_sim_time: true
+    rolling_window: false
     # Footprint rectangulaire réel : châssis + pare-chocs + roues
     # X = ±(0.90/2 + 0.08) = ±0.53m  |  Y = ±(0.37 + 0.114/2) = ±0.43m
-    footprint: "[[-0.53, -0.43], [-0.53, 0.43], [0.53, 0.43], [0.53, -0.43]]"
+    footprint: "[[-0.50, -0.43], [-0.50, 0.43], [0.50, 0.43], [0.50, -0.43]]"
     resolution: 0.05
     track_unknown_space: true
-    transform_tolerance: 0.5
-    plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+    transform_tolerance: 0.3
+    plugins: ["static_layer", "obstacle_layer", "keepout_filter", "inflation_layer"]
     static_layer:
       plugin: "nav2_costmap_2d::StaticLayer"
-      map_subscribe_transient_local: True
+      map_subscribe_transient_local: true
       enabled: true
       subscribe_to_updates: true
     obstacle_layer:
       plugin: "nav2_costmap_2d::ObstacleLayer"
-      enabled: True
+      enabled: true
       observation_sources: scan
       footprint_clearing_enabled: true
       max_obstacle_height: 2.0
@@ -188,16 +196,20 @@ global_costmap:
         raytrace_min_range: 0.0
         max_obstacle_height: 2.0
         min_obstacle_height: 0.0
-        clearing: True
-        marking: True
+        clearing: true
+        marking: true
         data_type: "LaserScan"
-        inf_is_valid: True
+        inf_is_valid: true
+    keepout_filter:
+      plugin: "nav2_costmap_2d::KeepoutFilter"
+      enabled: True
+      filter_info_topic: "/costmap_filter_info"
     inflation_layer:
       plugin: "nav2_costmap_2d::InflationLayer"
-      cost_scaling_factor: 3.0
+      cost_scaling_factor: 5.0
       # inflation_radius doit être > demi-diagonale du footprint
-      # demi-diagonale = sqrt(0.53² + 0.43²) ≈ 0.68m → on met 0.75m
-      inflation_radius: 0.75
+      # demi-diagonale = sqrt(0.50² + 0.43²) ≈ 0.66m → marge de sécurité 0.85m
+      inflation_radius: 0.85
 
 # ──────────────────────────────────────────────────────────────────
 #  LOCAL COSTMAP — Carte de coût locale (évitement réactif)
@@ -208,17 +220,17 @@ local_costmap:
     publish_frequency: 2.0
     global_frame: odom
     robot_base_frame: base_footprint
-    use_sim_time: True
-    rolling_window: True
+    use_sim_time: true
+    rolling_window: true
     width: 3
     height: 3
     resolution: 0.05
-    footprint: "[[-0.53, -0.43], [-0.53, 0.43], [0.53, 0.43], [0.53, -0.43]]"
-    transform_tolerance: 0.5
-    plugins: ["obstacle_layer", "inflation_layer"]
+    footprint: "[[-0.50, -0.43], [-0.50, 0.43], [0.50, 0.43], [0.50, -0.43]]"
+    transform_tolerance: 0.3
+    plugins: ["obstacle_layer", "keepout_filter", "inflation_layer"]
     obstacle_layer:
       plugin: "nav2_costmap_2d::ObstacleLayer"
-      enabled: True
+      enabled: true
       observation_sources: scan
       footprint_clearing_enabled: true
       max_obstacle_height: 2.0
@@ -231,21 +243,25 @@ local_costmap:
         raytrace_min_range: 0.0
         max_obstacle_height: 2.0
         min_obstacle_height: 0.0
-        clearing: True
-        marking: True
+        clearing: true
+        marking: true
         data_type: "LaserScan"
-        inf_is_valid: True
+        inf_is_valid: true
+    keepout_filter:
+      plugin: "nav2_costmap_2d::KeepoutFilter"
+      enabled: True
+      filter_info_topic: "/costmap_filter_info"
     inflation_layer:
       plugin: "nav2_costmap_2d::InflationLayer"
-      cost_scaling_factor: 3.0
-      inflation_radius: 0.75
+      cost_scaling_factor: 5.0
+      inflation_radius: 0.85
 
 # ──────────────────────────────────────────────────────────────────
 #  MAP SERVER — Serveur de carte statique
 # ──────────────────────────────────────────────────────────────────
 map_server:
   ros__parameters:
-    use_sim_time: True
+    use_sim_time: true
     yaml_filename: ""   # Surchargé par le launch file via l'argument 'map'
 
 # ──────────────────────────────────────────────────────────────────
@@ -254,7 +270,7 @@ map_server:
 planner_server:
   ros__parameters:
     expected_planner_frequency: 20.0
-    use_sim_time: True
+    use_sim_time: true
     planner_plugins: ["GridBased"]
     GridBased:
       plugin: "nav2_navfn_planner::NavfnPlanner"
@@ -267,7 +283,7 @@ planner_server:
 # ──────────────────────────────────────────────────────────────────
 behavior_server:
   ros__parameters:
-    use_sim_time: True
+    use_sim_time: true
     local_costmap_topic: local_costmap/costmap_raw
     global_costmap_topic: global_costmap/costmap_raw
     local_footprint_topic: local_costmap/published_footprint
@@ -296,13 +312,13 @@ behavior_server:
 # ──────────────────────────────────────────────────────────────────
 waypoint_follower:
   ros__parameters:
-    use_sim_time: True
+    use_sim_time: true
     loop_rate: 20
     stop_on_failure: false
     waypoint_task_executor_plugin: "wait_at_waypoint"
     wait_at_waypoint:
       plugin: "nav2_waypoint_follower::WaitAtWaypoint"
-      enabled: True
+      enabled: true
       waypoint_pause_duration: 200   # ms
 
 # ──────────────────────────────────────────────────────────────────
@@ -310,7 +326,7 @@ waypoint_follower:
 # ──────────────────────────────────────────────────────────────────
 velocity_smoother:
   ros__parameters:
-    use_sim_time: True
+    use_sim_time: true
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
@@ -336,16 +352,16 @@ velocity_smoother:
 # ──────────────────────────────────────────────────────────────────
 lifecycle_manager_navigation:
   ros__parameters:
-    use_sim_time: True
-    autostart: True
-    node_names: ['map_server', 'amcl', 'planner_server', 'controller_server', 'behavior_server', 'bt_navigator', 'waypoint_follower', 'velocity_smoother', 'collision_monitor', 'route_server', 'docking_server']
+    use_sim_time: true
+    autostart: true
+    node_names: ['map_server', 'amcl', 'filter_mask_server', 'costmap_filter_info_server', 'planner_server', 'controller_server', 'behavior_server', 'bt_navigator', 'waypoint_follower', 'velocity_smoother', 'collision_monitor', 'route_server', 'docking_server']
 
 # ──────────────────────────────────────────────────────────────────
 #  JAZZY SPECIFIC NODES (Collision Monitor, Route, Docking)
 # ──────────────────────────────────────────────────────────────────
 collision_monitor:
   ros__parameters:
-    use_sim_time: True
+    use_sim_time: true
     base_frame_id: "base_footprint"
     odom_frame_id: "odom"
     transform_tolerance: 0.2
@@ -355,17 +371,39 @@ collision_monitor:
     scan:
       type: "scan"
       topic: "/scan_filtered"
-    polygons: ["footprint_polygon"]
-    footprint_polygon:
+    # Deux polygones concentriques : ralentissement progressif puis arrêt d'urgence
+    polygons: ["slowdown_polygon", "stop_polygon"]
+    slowdown_polygon:
       type: "polygon"
-      points: "[[-0.6, -0.5], [-0.6, 0.5], [0.6, 0.5], [0.6, -0.5]]"
+      # Zone extérieure (~40 cm au-delà du châssis) — décélération progressive
+      points: "[[-1.0, -0.7], [-1.0, 0.7], [1.0, 0.7], [1.0, -0.7]]"
+      action_type: "slowdown"
+      max_points: 3
+      slowdown_ratio: 0.3
+    stop_polygon:
+      type: "polygon"
+      # Zone intérieure (~10 cm au-delà du châssis) — arrêt d'urgence
+      points: "[[-0.65, -0.50], [-0.65, 0.50], [0.65, 0.50], [0.65, -0.50]]"
       action_type: "stop"
+      max_points: 3
 
 
 route_server:
   ros__parameters:
-    use_sim_time: True
+    use_sim_time: true
 
 docking_server:
   ros__parameters:
-    use_sim_time: True
+    use_sim_time: true
+
+costmap_filter_info_server:
+  ros__parameters:
+    use_sim_time: true
+    type: 0 # Type 0 indicates a Keepout Zone filter
+    filter_mask_topic: "/keepout_filter_mask"
+
+filter_mask_server:
+  ros__parameters:
+    use_sim_time: true
+    frame_id: "map"
+    topic_name: "/keepout_filter_mask"
