@@ -202,10 +202,8 @@ global_costmap:
         inf_is_valid: true
     inflation_layer:
       plugin: "nav2_costmap_2d::InflationLayer"
-      cost_scaling_factor: 5.0
-      # inflation_radius doit être > demi-diagonale du footprint
-      # demi-diagonale = sqrt(0.50² + 0.43²) ≈ 0.66m → marge de sécurité 0.85m
-      inflation_radius: 0.85
+      cost_scaling_factor: 3.5
+      inflation_radius: 1.1
 
 # ──────────────────────────────────────────────────────────────────
 #  LOCAL COSTMAP — Carte de coût locale (évitement réactif)
