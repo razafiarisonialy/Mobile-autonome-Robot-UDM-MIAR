@@ -169,6 +169,58 @@ ros2 launch industry_robot_navigation navigation2.launch.py
 > 2. Utilisez **« 2D Pose Estimate »** pour donner la position initiale du robot sur la carte.
 > 3. Utilisez **« Nav2 Goal »** pour envoyer un objectif — le robot planifie et s'y rend en évitant les obstacles.
 
+
+---
+
+## 🎯 Exécution des Missions
+
+Une fois que la simulation et la navigation autonome sont démarrées, vous avez **2 options** pour déclencher et suivre les missions logistiques (ex: `approvisionnement`, `cycle_complet`, `retour_base`, `inspection_qualite`) :
+
+### 🛠️ Option 1 — Via la Ligne de Commande (CLI)
+Idéal pour le diagnostic rapide et le test de fonctionnement direct.
+
+1. **Démarrer le gestionnaire de missions** dans un terminal :
+   ```bash
+   ros2 launch industry_robot_mission mission.launch.py
+   ```
+2. **Déclencher et suivre une mission** dans un nouveau terminal :
+   ```bash
+   ros2 run industry_robot_mission send_mission.py --name approvisionnement
+   ```
+3. **Lister toutes les missions disponibles** :
+   ```bash
+   ros2 run industry_robot_mission send_mission.py
+   ```
+
+---
+
+### 💻 Option 2 — Via l'Interface Web React (rosbridge)
+Un tableau de bord moderne et interactif en mode sombre pour piloter le robot et suivre sa progression d'un simple clic !
+
+1. **Lancer le WebSocket rosbridge** (pour connecter le navigateur web à ROS 2) :
+   ```bash
+   ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+   ```
+   > [!NOTE]
+   > Si le package `rosbridge_server` n'est pas encore installé sur votre système ROS 2 Jazzy, exécutez d'abord :  
+   > `sudo apt update && sudo apt install ros-jazzy-rosbridge-server`
+
+2. **Démarrer le gestionnaire de missions** (si pas déjà fait à l'étape précédente) :
+   ```bash
+   ros2 launch industry_robot_mission mission.launch.py
+   ```
+
+3. **Démarrer le dashboard React** :
+   ```bash
+   cd industrie_robot_interface
+   npm run dev
+   ```
+
+4. **Accéder à l'interface** :
+   - Ouvrez votre navigateur sur [http://localhost:5173](http://localhost:5173).
+   - Le statut de connexion ROS 2 dans le header passera automatiquement au **vert** (🟢 Connecté).
+   - Cliquez sur **Lancer la mission** sur n'importe quelle carte pour commander le robot et suivre en temps réel la progression grâce au terminal de logs intégré.
+
 ---
 
 ## 🎮 Piloter le Robot
