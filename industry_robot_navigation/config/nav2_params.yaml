@@ -147,7 +147,8 @@ controller_server:
       short_circuit_trajectory_evaluation: true
       stateful: true
       critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-      BaseObstacle.scale: 0.5
+      # Augmenté 0.5 → 3.0 : DWB pénalise fortement les trajectoires proches d'obstacles
+      BaseObstacle.scale: 3.0
       PathAlign.scale: 32.0
       PathAlign.forward_point_distance: 0.1
       GoalAlign.scale: 24.0
@@ -171,7 +172,7 @@ global_costmap:
     rolling_window: false
     # Footprint rectangulaire réel : châssis + pare-chocs + roues
     # X = ±(0.90/2 + 0.08) = ±0.53m  |  Y = ±(0.37 + 0.114/2) = ±0.43m
-    footprint: "[[-0.50, -0.43], [-0.50, 0.43], [0.50, 0.43], [0.50, -0.43]]"
+    footprint: "[[-0.53, -0.43], [-0.53, 0.43], [0.53, 0.43], [0.53, -0.43]]"
     resolution: 0.05
     track_unknown_space: true
     transform_tolerance: 0.3
@@ -202,8 +203,10 @@ global_costmap:
         inf_is_valid: true
     inflation_layer:
       plugin: "nav2_costmap_2d::InflationLayer"
-      cost_scaling_factor: 3.5
-      inflation_radius: 1.1
+      # Augmenté 1.1 → 1.75 : le planificateur cherche des chemins plus éloignés des obstacles
+      # Diminué 3.5 → 2.0 : le coût reste élevé sur une plus grande distance (décroissance lente)
+      cost_scaling_factor: 2.0
+      inflation_radius: 1.75
 
 # ──────────────────────────────────────────────────────────────────
 #  LOCAL COSTMAP — Carte de coût locale (évitement réactif)
@@ -216,10 +219,11 @@ local_costmap:
     robot_base_frame: base_footprint
     use_sim_time: true
     rolling_window: true
-    width: 3
-    height: 3
+    # Fenêtre agrandie 3→5m pour contenir l'inflation élargie sans coupure
+    width: 5
+    height: 5
     resolution: 0.05
-    footprint: "[[-0.50, -0.43], [-0.50, 0.43], [0.50, 0.43], [0.50, -0.43]]"
+    footprint: "[[-0.53, -0.43], [-0.53, 0.43], [0.53, 0.43], [0.53, -0.43]]"
     transform_tolerance: 0.3
     plugins: ["obstacle_layer", "inflation_layer"]
     obstacle_layer:
@@ -243,8 +247,10 @@ local_costmap:
         inf_is_valid: true
     inflation_layer:
       plugin: "nav2_costmap_2d::InflationLayer"
-      cost_scaling_factor: 5.0
-      inflation_radius: 0.85
+      # Augmenté 0.85 → 1.3 : DWB dévie plus tôt en réactif
+      # Diminué 5.0 → 2.5 : zone coûteuse plus large autour des obstacles
+      cost_scaling_factor: 2.5
+      inflation_radius: 1.3
 
 # ──────────────────────────────────────────────────────────────────
 #  MAP SERVER — Serveur de carte statique

@@ -82,7 +82,8 @@ sudo apt install -y \
   ros-jazzy-turtlebot3-cartographer \
   ros-jazzy-navigation2 \
   ros-jazzy-nav2-bringup \
-  ros-jazzy-turtlebot3-navigation2
+  ros-jazzy-turtlebot3-navigation2 \
+  ros-jazzy-rosbridge-server
 ```
 
 ### 5. Cloner et compiler le projet
