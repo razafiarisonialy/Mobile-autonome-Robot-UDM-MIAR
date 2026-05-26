@@ -172,7 +172,49 @@ ros2 launch industry_robot_navigation navigation2.launch.py
 
 ---
 
+## 📍 Calibration des Stations
+
+> **A faire avant la première mission**, ou après tout changement de carte ou de positions physiques.
+
+La calibration définit les coordonnées exactes (x, y, yaw) de chaque station logistique sur la carte Gazebo.
+Le résultat est sauvegardé dans `industry_robot_mission/config/stations.yaml`.
+
+**Terminal 1** — Lancer la navigation (requis pour la carte et l'outil Nav2 Goal dans RViz) :
+
+```bash
+ros2 launch industry_robot_navigation nav.launch.py
+```
+
+**Terminal 2** — Lancer le script de calibration interactif :
+
+```bash
+ros2 run industry_robot_mission calibrate_stations.py
+```
+
+**Dans RViz2**, utiliser l'outil **"Nav2 Goal"** (flèche verte) :
+- Cliquer et **glisser** sur la carte pour définir la position et l'orientation du robot sur la station cible
+- Le script demande ensuite le nom de la station dans le terminal
+
+**Dans le terminal de calibration**, choisir la station correspondante :
+
+```
+1 → base_charge
+2 → matieres_premieres
+3 → poste_decoupe
+4 → controle_qualite
+5 → expedition
+c → nom personnalisé
+s → ignorer cette pose
+```
+
+Répéter pour chaque station, puis **`Ctrl+C`** pour terminer.
+Le script affiche le YAML complet à copier dans `industry_robot_mission/config/stations.yaml`.
+
+---
+
 ## 🎯 Exécution des Missions
+
+> **Prérequis** : avoir effectué la [calibration des stations](#-calibration-des-stations) au moins une fois.
 
 Une fois que la simulation et la navigation autonome sont démarrées, vous avez **2 options** pour déclencher et suivre les missions logistiques (ex: `approvisionnement`, `cycle_complet`, `retour_base`, `inspection_qualite`) :
 
@@ -183,10 +225,16 @@ Idéal pour le diagnostic rapide et le test de fonctionnement direct.
    ```bash
    ros2 launch industry_robot_mission mission.launch.py
    ```
-2. **Déclencher et suivre une mission** dans un nouveau terminal :
-   ```bash
-   ros2 run industry_robot_mission send_mission.py --name approvisionnement
-   ```
+
+2. **Déclencher une mission** dans un nouveau terminal :
+
+   | Mission | Commande |
+   |---------|---------|
+   | Approvisionnement (matières premières → découpe) | `ros2 run industry_robot_mission send_mission.py --name approvisionnement` |
+   | Cycle complet (production bout en bout) | `ros2 run industry_robot_mission send_mission.py --name cycle_complet` |
+   | Inspection qualité (contrôle + expédition) | `ros2 run industry_robot_mission send_mission.py --name inspection_qualite` |
+   | Retour base (urgence ou fin de mission) | `ros2 run industry_robot_mission send_mission.py --name retour_base` |
+
 3. **Lister toutes les missions disponibles** :
    ```bash
    ros2 run industry_robot_mission send_mission.py

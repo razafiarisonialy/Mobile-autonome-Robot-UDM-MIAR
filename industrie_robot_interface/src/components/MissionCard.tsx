@@ -40,14 +40,13 @@ export const MissionCard: React.FC<MissionCardProps> = ({
   };
 
   return (
-    <div className={`mission-card ${getStatusClass()}`} style={{ '--accent-color': mission.color } as React.CSSProperties}>
+    <div className={`mission-card ${getStatusClass()}`}>
       <div className="card-header">
-        <span className="mission-icon">{mission.icon}</span>
         <h3 className="mission-name">{mission.name}</h3>
       </div>
-      
+
       <p className="mission-description">{mission.description}</p>
-      
+
       <div className="stations-flow">
         <h4 className="flow-title">Itinéraire</h4>
         <div className="stations-list">
@@ -55,27 +54,25 @@ export const MissionCard: React.FC<MissionCardProps> = ({
             const station = STATIONS[stationId];
             return (
               <React.Fragment key={`${stationId}-${index}`}>
-                <div className="station-badge" title={station?.description || stationId}>
+                <span className="station-badge" title={station?.description || stationId}>
                   {station?.label || stationId}
-                </div>
+                </span>
                 {index < mission.stations.length - 1 && (
-                  <span className="flow-arrow">→</span>
+                  <span className="flow-arrow">›</span>
                 )}
               </React.Fragment>
             );
           })}
         </div>
       </div>
-      
+
       <button
         type="button"
-        className={`btn-execute ${isActive ? 'active' : ''}`}
+        className="btn-execute"
         onClick={() => onExecute(mission.id)}
         disabled={disabled && !isActive}
       >
-        {isActive && currentState === 'running' && (
-          <span className="spinner"></span>
-        )}
+        {isActive && currentState === 'running' && <span className="spinner"></span>}
         {getButtonText()}
       </button>
     </div>

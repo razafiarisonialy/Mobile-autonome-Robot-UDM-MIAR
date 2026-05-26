@@ -19,7 +19,7 @@ function App() {
           <div>
             <h2 className="section-title">Missions Logistiques</h2>
             <p className="section-subtitle">
-              Sélectionnez une mission pour orchestrer le robot autonome AMR Husky A300
+              Sélectionnez une mission pour orchestrer le robot mobile autonome
             </p>
           </div>
 

@@ -9,12 +9,26 @@ interface MissionStatus {
   message: string | null;
 }
 
-/**
- * Hook React pour déclencher les missions via rosbridge.
- *
- * 1. Appelle le service /mission_manager/start_mission pour valider
- * 2. Envoie le goal action /mission_manager/execute_mission pour exécuter
- */
+interface StartMissionResponse {
+  accepted: boolean;
+  message: string;
+  stations_liste: string[];
+}
+
+interface ExecuteMissionFeedback {
+  station_courante: string;
+  station_index: number;
+  station_total: number;
+  statut: string;
+  progression: number;
+}
+
+interface ExecuteMissionResult {
+  success: boolean;
+  message: string;
+  stations_visitees: number;
+}
+
 export function useMission(
   ros: ROSLIB.Ros | null,
   connected: boolean,
@@ -29,13 +43,12 @@ export function useMission(
   const executeMission = useCallback(
     (missionName: string) => {
       if (!ros || !connected) {
-        addStatusMessage('❌ Non connecté à ROS 2 — impossible de lancer la mission.');
+        addStatusMessage('[ERREUR] Non connecté à ROS 2 — impossible de lancer la mission.');
         return;
       }
 
-      // Étape 1 : Validation via le service
       setStatus({ state: 'validating', currentMission: missionName, message: null });
-      addStatusMessage(`⏳ Validation de la mission "${missionName}"...`);
+      addStatusMessage(`[...] Validation de la mission "${missionName}"...`);
 
       const startService = new ROSLIB.Service({
         ros,
@@ -49,81 +62,92 @@ export function useMission(
 
       startService.callService(
         request,
-        (response: any) => {
+        (serviceResponse: unknown) => {
+          const response = serviceResponse as StartMissionResponse;
+
           if (!response.accepted) {
             setStatus({
               state: 'error',
               currentMission: missionName,
               message: response.message,
             });
-            addStatusMessage(`❌ Mission refusée : ${response.message}`);
+            addStatusMessage(`[ERREUR] Mission refusée : ${response.message}`);
             return;
           }
 
           addStatusMessage(
-            `✅ Mission "${missionName}" validée — ${response.stations_liste.length} station(s)`,
+            `[OK] Mission "${missionName}" validée — ${response.stations_liste.length} station(s)`,
           );
 
-          // Étape 2 : Exécution via l'action
           setStatus({ state: 'running', currentMission: missionName, message: null });
-          addStatusMessage(`🚀 Démarrage de la navigation pour "${missionName}"...`);
+          addStatusMessage(`[INFO] Démarrage de la navigation pour "${missionName}"...`);
 
-          const actionClient = new ROSLIB.ActionClient({
+          const executeMissionAction = new ROSLIB.Action<
+            { mission_name: string },
+            ExecuteMissionFeedback,
+            ExecuteMissionResult
+          >({
             ros,
-            serverName: '/mission_manager/execute_mission',
-            actionName: 'industry_robot_mission/action/ExecuteMission',
+            name: '/mission_manager/execute_mission',
+            actionType: 'industry_robot_mission/ExecuteMission',
           });
 
-          const goal = new ROSLIB.Goal({
-            actionClient,
-            goalMessage: {
+          executeMissionAction.sendGoal(
+            {
               mission_name: missionName,
             },
-          });
+            (result) => {
+              if (result.success) {
+                setStatus({
+                  state: 'success',
+                  currentMission: missionName,
+                  message: result.message,
+                });
+                addStatusMessage(`[OK] ${result.message}`);
+              } else {
+                setStatus({
+                  state: 'error',
+                  currentMission: missionName,
+                  message: result.message,
+                });
+                addStatusMessage(`[ERREUR] ${result.message}`);
+              }
 
-          goal.on('feedback', (feedback: any) => {
-            const pct = Math.round(feedback.progression * 100);
-            addStatusMessage(
-              `📍 [${feedback.statut}] ${feedback.station_courante} (${feedback.station_index + 1}/${feedback.station_total}) — ${pct}%`,
-            );
-          });
-
-          goal.on('result', (result: any) => {
-            if (result.success) {
-              setStatus({
-                state: 'success',
-                currentMission: missionName,
-                message: result.message,
-              });
-              addStatusMessage(`✅ ${result.message}`);
-            } else {
+              setTimeout(() => {
+                setStatus((prev) =>
+                  prev.currentMission === missionName
+                    ? { state: 'idle', currentMission: null, message: null }
+                    : prev,
+                );
+              }, 5000);
+            },
+            (feedback) => {
+              const pct = Math.round(feedback.progression * 100);
+              addStatusMessage(
+                `[INFO] [${feedback.statut}] ${feedback.station_courante} (${feedback.station_index + 1}/${feedback.station_total}) — ${pct}%`,
+              );
+            },
+            (error) => {
               setStatus({
                 state: 'error',
                 currentMission: missionName,
-                message: result.message,
+                message: `Action inaccessible : ${error}`,
               });
-              addStatusMessage(`❌ ${result.message}`);
-            }
+              addStatusMessage(`[ERREUR] Erreur action : ${error}`);
 
-            // Remettre à idle après 5 secondes
-            setTimeout(() => {
-              setStatus((prev) =>
-                prev.currentMission === missionName
-                  ? { state: 'idle', currentMission: null, message: null }
-                  : prev,
-              );
-            }, 5000);
-          });
-
-          goal.send();
+              setTimeout(() => {
+                setStatus({ state: 'idle', currentMission: null, message: null });
+              }, 5000);
+            },
+          );
         },
-        (error: any) => {
+        (error: unknown) => {
           setStatus({
             state: 'error',
             currentMission: missionName,
             message: `Service inaccessible : ${error}`,
           });
-          addStatusMessage(`❌ Erreur service : ${error}`);
+          addStatusMessage(`[ERREUR] Erreur service : ${error}`);
 
           setTimeout(() => {
             setStatus({ state: 'idle', currentMission: null, message: null });

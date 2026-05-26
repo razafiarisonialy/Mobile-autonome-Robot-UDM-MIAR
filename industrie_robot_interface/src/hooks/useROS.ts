@@ -48,7 +48,7 @@ export function useROS() {
 
     ros.on('connection', () => {
       setConnected(true);
-      addStatusMessage('✅ Connecté à rosbridge_server');
+      addStatusMessage('[OK] Connecté à rosbridge_server');
 
       // Subscribe au topic /mission_status
       const statusTopic = new ROSLIB.Topic({
@@ -68,7 +68,7 @@ export function useROS() {
 
     ros.on('close', () => {
       setConnected(false);
-      addStatusMessage('🔴 Connexion perdue — reconnexion...');
+      addStatusMessage('[ERREUR] Connexion perdue — reconnexion...');
 
       // Reconnexion automatique
       if (reconnectTimerRef.current) {
