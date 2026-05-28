@@ -293,12 +293,13 @@ class MissionManagerNode(Node):
                 self._cb_feedback_nav2(fb_msg, goal_handle, noms_stations)
 
         # Envoi du goal et attente de l'acceptation (timeout 30s)
+        # Note: asyncio.wait_for() échoue avec le MultiThreadedExecutor de rclpy
+        # sous Python 3.12 (pas de boucle event loop dans le thread). On utilise
+        # un polling manuel avec asyncio.sleep() qui, lui, fonctionne.
         send_future = client.send_goal_async(goal_msg, feedback_callback=cb_feedback_nav2)
         try:
-            gh_nav2 = await asyncio.wait_for(
-                self._attendre_future(send_future), timeout=30.0
-            )
-        except asyncio.TimeoutError:
+            gh_nav2 = await self._attendre_future_timeout(send_future, 30.0)
+        except TimeoutError:
             self.get_logger().error('Timeout attente acceptation du goal Nav2 (30s).')
             return False, 0, "Timeout lors de l'envoi du goal Nav2."
 
@@ -309,10 +310,8 @@ class MissionManagerNode(Node):
         # Attente du résultat avec timeout mission
         result_future = gh_nav2.get_result_async()
         try:
-            result_response = await asyncio.wait_for(
-                self._attendre_future(result_future), timeout=timeout_sec
-            )
-        except asyncio.TimeoutError:
+            result_response = await self._attendre_future_timeout(result_future, timeout_sec)
+        except TimeoutError:
             self.get_logger().error(
                 f'Timeout mission atteint ({timeout_sec:.0f}s) — annulation du goal Nav2.'
             )
@@ -446,6 +445,20 @@ class MissionManagerNode(Node):
     async def _attendre_future(self, future):
         """Attend qu'une future rclpy soit résolue (polling non bloquant)."""
         while not future.done():
+            await asyncio.sleep(0.05)
+        return future.result()
+
+    async def _attendre_future_timeout(self, future, timeout_sec: float):
+        """Attend une future rclpy avec timeout — sans asyncio.wait_for().
+
+        asyncio.wait_for() utilise asyncio.get_running_loop() via asyncio.timeout()
+        ce qui échoue sous Python 3.12 avec le MultiThreadedExecutor de rclpy.
+        Ce polling manuel contourne le problème.
+        """
+        deadline = time.monotonic() + timeout_sec
+        while not future.done():
+            if time.monotonic() > deadline:
+                raise TimeoutError(f'Future non résolue après {timeout_sec}s')
             await asyncio.sleep(0.05)
         return future.result()
 
