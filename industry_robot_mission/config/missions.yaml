@@ -1,0 +1,19 @@
+# Définition des séquences de mission logistique AMR.
+# Chaque mission liste les stations à visiter dans l'ordre.
+# La mission "retour_base" est réservée au retour d'urgence automatique.
+missions:
+  approvisionnement:
+    description: "Collecte matières premières et acheminement vers la découpe"
+    stations: [base_charge, matieres_premieres, poste_decoupe, base_charge]
+
+  cycle_complet:
+    description: "Cycle de production complet de bout en bout"
+    stations: [matieres_premieres, poste_decoupe, controle_qualite, expedition, base_charge]
+
+  retour_base:
+    description: "Retour d'urgence à la base de recharge"
+    stations: [base_charge]
+
+  inspection_qualite:
+    description: "Ronde de contrôle qualité et expédition"
+    stations: [base_charge, controle_qualite, expedition, base_charge]

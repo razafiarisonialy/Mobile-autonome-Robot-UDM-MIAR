@@ -1,0 +1,14 @@
+# Goal — ce que le client envoie
+string mission_name
+---
+# Result — résultat final
+bool success
+string message
+int32 stations_visitees
+---
+# Feedback — progression en temps réel
+string station_courante
+int32 station_index
+int32 station_total
+string statut
+float32 progression

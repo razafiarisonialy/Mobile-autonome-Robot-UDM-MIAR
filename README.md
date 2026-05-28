@@ -82,7 +82,8 @@ sudo apt install -y \
   ros-jazzy-turtlebot3-cartographer \
   ros-jazzy-navigation2 \
   ros-jazzy-nav2-bringup \
-  ros-jazzy-turtlebot3-navigation2
+  ros-jazzy-turtlebot3-navigation2 \
+  ros-jazzy-rosbridge-server
 ```
 
 ### 5. Cloner et compiler le projet
@@ -168,6 +169,106 @@ ros2 launch industry_robot_navigation navigation2.launch.py
 > 1. Attendez que tous les nœuds Nav2 soient en état **Active** (affiché dans le terminal).
 > 2. Utilisez **« 2D Pose Estimate »** pour donner la position initiale du robot sur la carte.
 > 3. Utilisez **« Nav2 Goal »** pour envoyer un objectif — le robot planifie et s'y rend en évitant les obstacles.
+
+
+---
+
+## 📍 Calibration des Stations
+
+> **A faire avant la première mission**, ou après tout changement de carte ou de positions physiques.
+
+La calibration définit les coordonnées exactes (x, y, yaw) de chaque station logistique sur la carte Gazebo.
+Le résultat est sauvegardé dans `industry_robot_mission/config/stations.yaml`.
+
+**Terminal 1** — Lancer la navigation (requis pour la carte et l'outil Nav2 Goal dans RViz) :
+
+```bash
+ros2 launch industry_robot_navigation nav.launch.py
+```
+
+**Terminal 2** — Lancer le script de calibration interactif :
+
+```bash
+ros2 run industry_robot_mission calibrate_stations.py
+```
+
+**Dans RViz2**, utiliser l'outil **"Nav2 Goal"** (flèche verte) :
+- Cliquer et **glisser** sur la carte pour définir la position et l'orientation du robot sur la station cible
+- Le script demande ensuite le nom de la station dans le terminal
+
+**Dans le terminal de calibration**, choisir la station correspondante :
+
+```
+1 → base_charge
+2 → matieres_premieres
+3 → poste_decoupe
+4 → controle_qualite
+5 → expedition
+c → nom personnalisé
+s → ignorer cette pose
+```
+
+Répéter pour chaque station, puis **`Ctrl+C`** pour terminer.
+Le script affiche le YAML complet à copier dans `industry_robot_mission/config/stations.yaml`.
+
+---
+
+## 🎯 Exécution des Missions
+
+> **Prérequis** : avoir effectué la [calibration des stations](#-calibration-des-stations) au moins une fois.
+
+Une fois que la simulation et la navigation autonome sont démarrées, vous avez **2 options** pour déclencher et suivre les missions logistiques (ex: `approvisionnement`, `cycle_complet`, `retour_base`, `inspection_qualite`) :
+
+### 🛠️ Option 1 — Via la Ligne de Commande (CLI)
+Idéal pour le diagnostic rapide et le test de fonctionnement direct.
+
+1. **Démarrer le gestionnaire de missions** dans un terminal :
+   ```bash
+   ros2 launch industry_robot_mission mission.launch.py
+   ```
+
+2. **Déclencher une mission** dans un nouveau terminal :
+
+   | Mission | Commande |
+   |---------|---------|
+   | Approvisionnement (matières premières → découpe) | `ros2 run industry_robot_mission send_mission.py --name approvisionnement` |
+   | Cycle complet (production bout en bout) | `ros2 run industry_robot_mission send_mission.py --name cycle_complet` |
+   | Inspection qualité (contrôle + expédition) | `ros2 run industry_robot_mission send_mission.py --name inspection_qualite` |
+   | Retour base (urgence ou fin de mission) | `ros2 run industry_robot_mission send_mission.py --name retour_base` |
+
+3. **Lister toutes les missions disponibles** :
+   ```bash
+   ros2 run industry_robot_mission send_mission.py
+   ```
+
+---
+
+### 💻 Option 2 — Via l'Interface Web React (rosbridge)
+Un tableau de bord moderne et interactif en mode sombre pour piloter le robot et suivre sa progression d'un simple clic !
+
+1. **Lancer le WebSocket rosbridge** (pour connecter le navigateur web à ROS 2) :
+   ```bash
+   ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+   ```
+   > [!NOTE]
+   > Si le package `rosbridge_server` n'est pas encore installé sur votre système ROS 2 Jazzy, exécutez d'abord :  
+   > `sudo apt update && sudo apt install ros-jazzy-rosbridge-server`
+
+2. **Démarrer le gestionnaire de missions** (si pas déjà fait à l'étape précédente) :
+   ```bash
+   ros2 launch industry_robot_mission mission.launch.py
+   ```
+
+3. **Démarrer le dashboard React** :
+   ```bash
+   cd industrie_robot_interface
+   npm run dev
+   ```
+
+4. **Accéder à l'interface** :
+   - Ouvrez votre navigateur sur [http://localhost:5173](http://localhost:5173).
+   - Le statut de connexion ROS 2 dans le header passera automatiquement au **vert** (🟢 Connecté).
+   - Cliquez sur **Lancer la mission** sur n'importe quelle carte pour commander le robot et suivre en temps réel la progression grâce au terminal de logs intégré.
 
 ---
 
