@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as ROSLIB from 'roslib';
 
-const ROSBRIDGE_URL = 'ws://localhost:9090';
+const ROSBRIDGE_URL = `ws://${window.location.hostname}:9090`;
 const RECONNECT_DELAY_MS = 3000;
 
 export interface StatusMessage {
